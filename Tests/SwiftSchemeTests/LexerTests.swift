@@ -67,5 +67,31 @@ struct LexerTests {
         let token = try lexer.next()
         #expect(token?.value == .identifier(name: "abcdef"))
     }
+
+
+
+
+
+
+
+    @Test func testWhitespace01() async throws {
+        let data = "     \t\t  \r\n   \n    #t"
+        var lexer = Lexer(data: data)
+        let token = try lexer.next()
+        #expect(token?.value == .boolean(value: true))
+    }
+
+    @Test func testWhitespace02() async throws {
+        let data = """
+                ; comment
+                ;comment
+                ;
+                  \t\t    #t
+             """
+        var lexer = Lexer(data: data)
+        let token = try lexer.next()
+        #expect(token?.value == .boolean(value: true))
+    }
+
 }
 

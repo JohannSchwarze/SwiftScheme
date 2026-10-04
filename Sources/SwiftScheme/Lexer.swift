@@ -49,6 +49,8 @@ struct Lexer {
     mutating func next() throws -> Token? {
         guard pos < endPos else { return nil }
 
+        skipWhitespace()
+
         if let boolean = peekBoolean() {
             self.pos = boolean.end
             return boolean
@@ -78,11 +80,38 @@ struct Lexer {
     }
 
 
-
     private func char(at index: Int) -> Character? {
         guard 0 <= index, index < endPos else { return nil }
         return data[data.index(data.startIndex, offsetBy: index)]
     }
+
+
+
+
+
+    mutating func skipWhitespace() {
+        var index = pos
+        var updatedIndex: Bool = true
+        while updatedIndex {
+            updatedIndex = false
+            while let ch = char(at: index), ch.isWhitespace {
+                index += 1
+                updatedIndex = true
+            }
+            if let ch = char(at: index), ch == ";" {
+                while let ch = char(at: index), !ch.isNewline {
+                    index += 1
+                    updatedIndex = true
+                }
+            }
+        }
+        self.pos = index
+    }
+
+
+
+
+
 
     private func peekChar(exp: Character, value: TokenValue) -> Token? {
         guard let ch = char(at: pos) else { return nil }
@@ -203,6 +232,11 @@ struct Lexer {
                 isSpecialSubsequent(ch)
     }
 }
+
+
+
+
+
 
 
 
