@@ -7,11 +7,11 @@ import Testing
 
 
 
-struct DatumTests {
-    @Test func test01() throws {
+struct ParserTests {
+    @Test func testDatum01() throws {
         let data: String = "(hello 1 2 a b 3)"
-        var parser = DatumParser(lexer: PeekableLexer(data: data))
-        let datum = try parser.next()
+        var parser = Parser(lexer: PeekableLexer(data: data))
+        let datum = try parser.parseDatum()
         #expect(datum?.kind == .list(value: [
             .init(start: 1, end: 6, kind: .symbol(value: "hello")),
             .init(start: 7, end: 8, kind: .number(value: 1)),
@@ -22,10 +22,10 @@ struct DatumTests {
         ]))
     }
 
-    @Test func test02() throws {
+    @Test func testDatum02() throws {
         let data: String = "(lambda (x) (add x 1))"
-        var parser = DatumParser(lexer: PeekableLexer(data: data))
-        let datum = try parser.next()
+        var parser = Parser(lexer: PeekableLexer(data: data))
+        let datum = try parser.parseDatum()
         #expect(datum?.kind == .list(value: [
             .init(start: 1, end: 7, kind: .symbol(value: "lambda")),
             .init(start: 8, end: 11, kind: .list(value: [
