@@ -247,3 +247,45 @@ struct Lexer {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+struct PeekableLexer {
+    var lexer: Lexer
+    var buffer: [Token?] = []
+
+    init(data: String) {
+        self.lexer = Lexer(data: data)
+    }
+
+
+    mutating func peek() throws -> Token? {
+        if buffer.isEmpty {
+            buffer.append(try lexer.next())
+        }
+        return buffer.last!
+    }
+
+    mutating func next() throws -> Token? {
+        if buffer.isEmpty {
+            buffer.append(try lexer.next())
+        }
+        if let token = buffer.removeFirst() {
+            buffer.append(try lexer.next())
+            return token
+        }
+        return nil
+    }
+}
+

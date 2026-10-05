@@ -93,5 +93,20 @@ struct LexerTests {
         #expect(token?.value == .boolean(value: true))
     }
 
+
+
+    @Test func testPeek01() throws {
+        let data = "(a b c)"
+        var lexer = PeekableLexer(data: data)
+        
+        #expect(try lexer.peek()?.value == .lparen)
+        let _ = try lexer.next()
+
+        #expect(try lexer.peek()?.value == .identifier(name: "a"))
+        let _ = try lexer.next()
+
+        #expect(try lexer.peek()?.value == .identifier(name: "b"))
+        #expect(try lexer.next()?.value == .identifier(name: "b"))
+    }
 }
 
