@@ -11,12 +11,27 @@ struct Lexer {
     var pos: Int
     var endPos: Int
 
+    var positionStack: [Int] = []
+
     init(data: String) {
         self.data = data
         self.pos = 0
         self.endPos = data.count
     }
 
+
+
+    mutating func pushPosition() {
+        positionStack.append(pos)
+    }
+
+    mutating func popPosition() {
+        self.pos = positionStack.removeLast()
+    }
+
+    mutating func forgetPosition() {
+        let _ = positionStack.removeLast()
+    }
 
 
 
@@ -162,6 +177,10 @@ struct Lexer {
         return peekChar(exp: ")", value: .rparen)
     }
 
+    func peekQuoteAbbr() -> Token? {
+        return peekChar(exp: "'", value: .quoteAbbr)
+    }
+
 
 
 
@@ -260,6 +279,18 @@ struct PeekableLexer {
             return token
         }
         return nil
+    }
+
+    mutating func pushPosition() {
+        self.lexer.pushPosition()
+    }
+
+    mutating func popPosition() {
+        self.lexer.popPosition()
+    }
+
+    mutating func forgetPosition() {
+        self.lexer.forgetPosition()
     }
 }
 
