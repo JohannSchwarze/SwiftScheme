@@ -3,13 +3,29 @@
 
 
 
+enum ParserErrorKind: Error {
+    case unexpectedEOF
+    case unexpectedTokenKind(exp: TokenValue, act: TokenValue)
+}
+
+struct ParserError: Error {
+    let pos: Int
+    let kind: ParserErrorKind
+}
+
+
+
+
+
+
+
 
 
 
 
 
 struct Parser {
-    var lexer: PeekableLexer
+    var lexer: Lexer
 
 
 
@@ -38,7 +54,11 @@ struct Parser {
         }
 
         if let token, case .lparen = token.value {
-            return try parseProcedureCall()
+            if let ifToken = try lexer.peek2(), ifToken.value == .identifier(name: "if") {
+                return try parseConditional()
+            } else {
+                return try parseProcedureCall()
+            }
         }
 
         if let token, case .identifier(let name) = token.value {
@@ -49,25 +69,24 @@ struct Parser {
         return nil
     }
 
-    mutating func parseConditional() throws -> Expr? {
-        guard let lparenToken = try lexer.next() else { return nil }
-        guard case .lparen = lparenToken.value else { return nil }
+    mutating func parseConditional() throws -> Expr {
+        guard let lparenToken = try lexer.next() else { throw ParserError(pos: 0, kind: .unexpectedEOF) }
+        guard case .lparen = lparenToken.value else { throw ParserError(pos: lparenToken.start, kind: .unexpectedTokenKind(exp: .lparen, act: lparenToken.value)) }
 
-        guard let ifToken = try lexer.next() else { return nil }
-        guard case .identifier("if") = ifToken.value else { return nil }
+        guard let ifToken = try lexer.next() else { throw ParserError(pos: lparenToken.end, kind: .unexpectedEOF) }
+        guard case .identifier("if") = ifToken.value else { throw ParserError(pos: ifToken.start, kind: .unexpectedTokenKind(exp: .identifier(name: "if"), act: ifToken.value)) }
 
-        guard let test = try self.parseExpression() else { return nil }
-        guard let consequence = try self.parseExpression() else { return nil }
+        guard let test = try self.parseExpression() else { throw ParserError(pos: 0, kind: .unexpectedEOF) }
+        guard let consequence = try self.parseExpression() else { throw ParserError(pos: 0, kind: .unexpectedEOF) }
         
+        guard let nextToken = try lexer.peek() else { throw ParserError(pos: 0, kind: .unexpectedEOF) }
         var alternate: Expr? = nil
-        do {
+        if nextToken.value != .rparen {
             alternate = try self.parseExpression()
-        } catch {
-            
         }
 
-        guard let rparenToken = try lexer.next() else { return nil }
-        guard case .rparen = rparenToken.value else { return nil }
+        guard let rparenToken = try lexer.next() else { throw ParserError(pos: 0, kind: .unexpectedEOF) }
+        guard case .rparen = rparenToken.value else { throw ParserError(pos: 0, kind: .unexpectedEOF) }
 
         return Expr(start: lparenToken.start, end: rparenToken.end, kind: .conditional(test: test, consequence: consequence, alternate: alternate))
     }

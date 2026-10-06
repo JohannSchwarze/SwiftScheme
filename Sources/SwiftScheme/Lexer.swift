@@ -34,6 +34,20 @@ struct Lexer {
     }
 
 
+    mutating func peek() throws -> Token? {
+        self.pushPosition()
+        let token = try self.next()
+        self.popPosition()
+        return token
+    }
+
+    mutating func peek2() throws -> Token? {
+        self.pushPosition()
+        let _ = try self.next()
+        let token = try self.next()
+        self.popPosition()
+        return token
+    }
 
     mutating func next() throws -> Token? {
         guard pos < endPos else { return nil }
@@ -250,47 +264,4 @@ struct Lexer {
 
 
 
-
-
-
-
-struct PeekableLexer {
-    var lexer: Lexer
-    var buffer: [Token?] = []
-
-    init(data: String) {
-        self.lexer = Lexer(data: data)
-    }
-
-
-    mutating func peek() throws -> Token? {
-        if buffer.isEmpty {
-            buffer.append(try lexer.next())
-        }
-        return buffer.last!
-    }
-
-    mutating func next() throws -> Token? {
-        if buffer.isEmpty {
-            buffer.append(try lexer.next())
-        }
-        if let token = buffer.removeFirst() {
-            buffer.append(try lexer.next())
-            return token
-        }
-        return nil
-    }
-
-    mutating func pushPosition() {
-        self.lexer.pushPosition()
-    }
-
-    mutating func popPosition() {
-        self.lexer.popPosition()
-    }
-
-    mutating func forgetPosition() {
-        self.lexer.forgetPosition()
-    }
-}
 

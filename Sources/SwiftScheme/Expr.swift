@@ -3,7 +3,7 @@
 
 
 
-indirect enum ExprKind {
+indirect enum ExprKind: Equatable {
     case variable(String)
     case boolean(Bool)
     case number(Int)
@@ -13,7 +13,7 @@ indirect enum ExprKind {
 }
 
 
-struct Expr {
+struct Expr: Equatable {
     let start: Int
     let end: Int
     let kind: ExprKind

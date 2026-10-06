@@ -10,7 +10,7 @@ import Testing
 struct ParserTests {
     @Test func testDatum01() throws {
         let data: String = "(hello 1 2 a b 3)"
-        var parser = Parser(lexer: PeekableLexer(data: data))
+        var parser = Parser(lexer: Lexer(data: data))
         let datum = try parser.parseDatum()
         #expect(datum?.kind == .list(value: [
             .init(start: 1, end: 6, kind: .symbol(value: "hello")),
@@ -24,7 +24,7 @@ struct ParserTests {
 
     @Test func testDatum02() throws {
         let data: String = "(lambda (x) (add x 1))"
-        var parser = Parser(lexer: PeekableLexer(data: data))
+        var parser = Parser(lexer: Lexer(data: data))
         let datum = try parser.parseDatum()
         #expect(datum?.kind == .list(value: [
             .init(start: 1, end: 7, kind: .symbol(value: "lambda")),
@@ -37,6 +37,49 @@ struct ParserTests {
                 .init(start: 19, end: 20, kind: .number(value: 1)),
             ])),
         ]))
+    }
+
+
+
+
+
+
+
+    @Test func testProcedureCall01() throws {
+        let data: String = "(hello a b c)"
+        var parser = Parser(lexer: Lexer(data: data))
+        let expr = try parser.parseExpression()
+        #expect(expr?.kind == .procedureCall(
+            operator: .init(start: 1, end: 6, kind: .variable("hello")), 
+            operands: [
+                .init(start: 7, end: 8, kind: .variable("a")),
+                .init(start: 9, end: 10, kind: .variable("b")),
+                .init(start: 11, end: 12, kind: .variable("c")),
+            ]))
+    }
+
+
+
+
+
+    @Test func testIf01() throws {
+        let data: String = "(if test then else)"
+        var parser = Parser(lexer: Lexer(data: data))
+        let expr = try parser.parseExpression()
+        #expect(expr?.kind == .conditional(
+            test: .init(start: 4, end: 8, kind: .variable("test")), 
+            consequence: .init(start: 9, end: 13, kind: .variable("then")), 
+            alternate: .init(start: 14, end: 18, kind: .variable("else"))))
+    }
+
+    @Test func testIf02() throws {
+        let data: String = "(if test then)"
+        var parser = Parser(lexer: Lexer(data: data))
+        let expr = try parser.parseExpression()
+        #expect(expr?.kind == .conditional(
+            test: .init(start: 4, end: 8, kind: .variable("test")), 
+            consequence: .init(start: 9, end: 13, kind: .variable("then")), 
+            alternate: nil))
     }
 }
 

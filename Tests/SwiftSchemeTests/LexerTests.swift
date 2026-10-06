@@ -97,7 +97,7 @@ struct LexerTests {
 
     @Test func testPeek01() throws {
         let data = "(a b c)"
-        var lexer = PeekableLexer(data: data)
+        var lexer = Lexer(data: data)
         
         #expect(try lexer.peek()?.value == .lparen)
         let _ = try lexer.next()
