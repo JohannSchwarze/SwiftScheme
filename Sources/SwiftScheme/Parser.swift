@@ -48,9 +48,7 @@ struct Parser {
         if let token, case .quoteAbbr = token.value {
             let _ = try lexer.next()
             let datum = try self.parseDatum()
-            if let datum {
-                return Expr(start: token.start, end: datum.end, kind: .quotation(datum))
-            }
+            return Expr(start: token.start, end: datum.end, kind: .quotation(datum))
         }
 
         if let token, case .lparen = token.value {
@@ -108,7 +106,7 @@ struct Parser {
         return Expr(start: lparenToken.start, end: rparenToken.end, kind: .procedureCall(operator: op, operands: operands))
     }
 
-    mutating func parseDatum() throws -> Datum? {
+    mutating func parseDatum() throws -> Datum {
         let token = try lexer.peek()
 
         if let token, case .boolean(let value) = token.value {
@@ -130,21 +128,23 @@ struct Parser {
             let list = try parseDatumList()
             return list
         }
-        return nil
+        
+        throw ParserError(pos: 0, kind: .unexpectedEOF)
     }
 
 
-    mutating func parseDatumList() throws -> Datum? {
-        guard let lparenToken = try lexer.next() else { return nil }
-        guard case .lparen = lparenToken.value else { return nil }
+    mutating func parseDatumList() throws -> Datum {
+        guard let lparenToken = try lexer.next() else { throw ParserError(pos: 0, kind: .unexpectedEOF) }
+        guard case .lparen = lparenToken.value else { throw ParserError(pos: 0, kind: .unexpectedEOF) }
 
         var elements: [Datum] = []
-        while let datum = try self.parseDatum() {
+        while let token = try lexer.peek(), token.value != .rparen {
+            let datum = try parseDatum()
             elements.append(datum)
         }
 
-        guard let rparenToken = try lexer.next() else { return nil }
-        guard case .rparen = rparenToken.value else { return nil }
+        guard let rparenToken = try lexer.next() else { throw ParserError(pos: 0, kind: .unexpectedEOF) }
+        guard case .rparen = rparenToken.value else { throw ParserError(pos: 0, kind: .unexpectedEOF) }
 
         return Datum(start: lparenToken.start, end: rparenToken.end, kind: .list(value: elements))
     }

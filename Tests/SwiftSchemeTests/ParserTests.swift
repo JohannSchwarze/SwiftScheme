@@ -12,7 +12,7 @@ struct ParserTests {
         let data: String = "(hello 1 2 a b 3)"
         var parser = Parser(lexer: Lexer(data: data))
         let datum = try parser.parseDatum()
-        #expect(datum?.kind == .list(value: [
+        #expect(datum.kind == .list(value: [
             .init(start: 1, end: 6, kind: .symbol(value: "hello")),
             .init(start: 7, end: 8, kind: .number(value: 1)),
             .init(start: 9, end: 10, kind: .number(value: 2)),
@@ -26,7 +26,7 @@ struct ParserTests {
         let data: String = "(lambda (x) (add x 1))"
         var parser = Parser(lexer: Lexer(data: data))
         let datum = try parser.parseDatum()
-        #expect(datum?.kind == .list(value: [
+        #expect(datum.kind == .list(value: [
             .init(start: 1, end: 7, kind: .symbol(value: "lambda")),
             .init(start: 8, end: 11, kind: .list(value: [
                 .init(start: 9, end: 10, kind: .symbol(value: "x")),
