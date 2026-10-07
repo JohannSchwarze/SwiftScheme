@@ -3,6 +3,20 @@
 
 
 
+enum LexerErrorKind: Error, Equatable {
+    case unrecognizedToken
+}
+
+struct LexerError: Error, Equatable {
+    let pos: Int
+    let kind: LexerErrorKind
+}
+
+
+
+
+
+
 
 
 
@@ -79,7 +93,12 @@ struct Lexer {
             return rparen
         }
 
-        return nil
+        if let quoteAbbr = peekQuoteAbbr() {
+            self.pos = quoteAbbr.end
+            return quoteAbbr
+        }
+
+        throw LexerError(pos: pos, kind: .unrecognizedToken)
     }
 
 
