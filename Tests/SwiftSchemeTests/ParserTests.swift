@@ -49,7 +49,7 @@ struct ParserTests {
         let data: String = "(hello a b c)"
         var parser = Parser(lexer: Lexer(data: data))
         let expr = try parser.parseExpression()
-        #expect(expr?.kind == .procedureCall(
+        #expect(expr.kind == .procedureCall(
             operator: .init(start: 1, end: 6, kind: .variable("hello")), 
             operands: [
                 .init(start: 7, end: 8, kind: .variable("a")),
@@ -66,7 +66,7 @@ struct ParserTests {
         let data: String = "(if test then else)"
         var parser = Parser(lexer: Lexer(data: data))
         let expr = try parser.parseExpression()
-        #expect(expr?.kind == .conditional(
+        #expect(expr.kind == .conditional(
             test: .init(start: 4, end: 8, kind: .variable("test")), 
             consequence: .init(start: 9, end: 13, kind: .variable("then")), 
             alternate: .init(start: 14, end: 18, kind: .variable("else"))))
@@ -76,7 +76,7 @@ struct ParserTests {
         let data: String = "(if test then)"
         var parser = Parser(lexer: Lexer(data: data))
         let expr = try parser.parseExpression()
-        #expect(expr?.kind == .conditional(
+        #expect(expr.kind == .conditional(
             test: .init(start: 4, end: 8, kind: .variable("test")), 
             consequence: .init(start: 9, end: 13, kind: .variable("then")), 
             alternate: nil))
