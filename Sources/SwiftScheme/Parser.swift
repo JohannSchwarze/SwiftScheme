@@ -5,6 +5,7 @@
 
 enum ParserErrorKind: Error {
     case unexpectedEOF
+    case unsupportedVariableName
     case unexpectedTokenKind(exp: TokenValue, act: TokenValue)
 }
 
@@ -30,6 +31,45 @@ struct Parser {
 
 
 
+
+
+    mutating func parseProgram() throws -> Program {
+        var defs: [Definition] = []
+        while let token = try lexer.next() {
+            let def = try parseDefinition()
+            defs.append(def)
+        }
+        return Program(definitions: defs)
+    }
+
+
+    mutating func parseDefinition() throws -> Definition {
+        guard let lparenToken = try lexer.next() else { 
+            throw ParserError(pos: lexer.pos, kind: .unexpectedEOF) 
+        }
+        guard case .lparen = lparenToken.value else { 
+            throw ParserError(pos: lparenToken.start, kind: .unexpectedTokenKind(exp: .lparen, act: lparenToken.value)) 
+        }
+
+        guard let defKeywordToken = try lexer.next() else {
+            throw ParserError(pos: lexer.pos, kind: .unexpectedEOF) 
+        }
+        guard case .identifier("define") = defKeywordToken.value else {
+            throw ParserError(pos: lparenToken.start, kind: .unexpectedTokenKind(exp: .identifier(name: "define"), act: lparenToken.value)) 
+        }
+
+        let variable = try self.parseVariable()
+        let expr = try self.parseExpression()
+
+        guard let rparenToken = try lexer.next() else { 
+            throw ParserError(pos: lexer.pos, kind: .unexpectedEOF) 
+        }
+        guard case .rparen = rparenToken.value else { 
+            throw ParserError(pos: rparenToken.start, kind: .unexpectedTokenKind(exp: .rparen, act: rparenToken.value)) 
+        }
+
+        return Definition(variable: variable, expr: expr, start: lparenToken.start, end: rparenToken.end)
+    }
 
 
     mutating func parseExpression() throws -> Expr {
@@ -106,6 +146,20 @@ struct Parser {
         return Expr(start: lparenToken.start, end: rparenToken.end, kind: .procedureCall(operator: op, operands: operands))
     }
 
+    mutating func parseVariable() throws -> Expr {
+        guard let idToken = try lexer.next() else { 
+            throw ParserError(pos: lexer.pos, kind: .unexpectedEOF)
+        }
+        guard case .identifier(let id) = idToken.value else { 
+            throw ParserError(pos: idToken.start, kind: .unexpectedTokenKind(exp: .identifier(name: ""), act: idToken.value))
+        }
+        guard !isSyntacticKeyword(id) else {
+            throw ParserError(pos: idToken.start, kind: .unsupportedVariableName)
+        }
+
+        return Expr(start: idToken.start, end: idToken.end, kind: .variable(id))
+    }
+
     mutating func parseDatum() throws -> Datum {
         let token = try lexer.peek()
 
@@ -129,13 +183,17 @@ struct Parser {
             return list
         }
         
-        throw ParserError(pos: 0, kind: .unexpectedEOF)
+        throw ParserError(pos: lexer.pos, kind: .unexpectedEOF)
     }
 
 
     mutating func parseDatumList() throws -> Datum {
-        guard let lparenToken = try lexer.next() else { throw ParserError(pos: 0, kind: .unexpectedEOF) }
-        guard case .lparen = lparenToken.value else { throw ParserError(pos: 0, kind: .unexpectedEOF) }
+        guard let lparenToken = try lexer.next() else { 
+            throw ParserError(pos: lexer.pos, kind: .unexpectedEOF) 
+        }
+        guard case .lparen = lparenToken.value else { 
+            throw ParserError(pos: lparenToken.start, kind: .unexpectedTokenKind(exp: .lparen, act: lparenToken.value)) 
+        }
 
         var elements: [Datum] = []
         while let token = try lexer.peek(), token.value != .rparen {
@@ -143,10 +201,30 @@ struct Parser {
             elements.append(datum)
         }
 
-        guard let rparenToken = try lexer.next() else { throw ParserError(pos: 0, kind: .unexpectedEOF) }
-        guard case .rparen = rparenToken.value else { throw ParserError(pos: 0, kind: .unexpectedEOF) }
+        guard let rparenToken = try lexer.next() else { 
+            throw ParserError(pos: lexer.pos, kind: .unexpectedEOF) 
+        }
+        guard case .rparen = rparenToken.value else { 
+            throw ParserError(pos: rparenToken.start, kind: .unexpectedTokenKind(exp: .rparen, act: rparenToken.value)) 
+        }
 
         return Datum(start: lparenToken.start, end: rparenToken.end, kind: .list(value: elements))
+    }
+
+
+
+
+
+
+
+
+
+
+
+    private func isSyntacticKeyword(_ str: String) -> Bool {
+        return str == "if" ||
+                str == "lambda" ||
+                str == "define"
     }
 }
 
