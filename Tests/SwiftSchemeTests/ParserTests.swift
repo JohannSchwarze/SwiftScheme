@@ -81,6 +81,21 @@ struct ParserTests {
             consequence: .init(start: 9, end: 13, kind: .variable("then")), 
             alternate: nil))
     }
+
+
+
+    @Test func testLambda01() throws {
+        let data: String = "(lambda (x) (a x 1))"
+        var parser = Parser(lexer: Lexer(data: data))
+        let expr = try parser.parseExpression()
+        #expect(expr.kind == .procedure(params: ["x"], body: [
+            .init(start: 12, end: 19, kind: 
+            .procedureCall(operator: .init(start: 13, end: 14, kind: .variable("a")), operands: [
+                .init(start: 15, end: 16, kind: .variable("x")),
+                .init(start: 17, end: 18, kind: .number(1)),
+            ]))
+        ]))
+    }
 }
 
 
