@@ -6,7 +6,7 @@ enum SchemeEnvironmentError: Error {
 
 
 
-struct SchemeEnvironment<T> {
+struct SchemeEnvironment<T: Equatable>: Equatable {
     var locations: [[String : T]] = [[:]]
 
 
