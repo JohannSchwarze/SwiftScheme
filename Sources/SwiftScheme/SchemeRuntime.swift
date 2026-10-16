@@ -53,6 +53,12 @@ struct SchemeRuntime {
     }
 
 
+    func evaluate(_ str: String, env: SchemeEnvironment<SchemeValue>) throws -> SchemeValue {
+        var parser = Parser(lexer: Lexer(data: str))
+        let expr = try parser.parseExpression()
+        return try evaluate(expr: expr, env: env)
+    }
+
     func evaluate(expr: Expr, env: SchemeEnvironment<SchemeValue>) throws -> SchemeValue {
         switch expr.kind {
         case .boolean(let value):
@@ -81,21 +87,21 @@ struct SchemeRuntime {
 
         case .procedureCall(let op, let operands):
             let proc = try evaluate(expr: op, env: env)
-            guard case .procedure(var env, let params, let body) = proc else {
+            guard case .procedure(var procEnv, let params, let body) = proc else {
                 throw ParserError.init(pos: 0, kind: .unexpectedEOF)
             }
-            env.pushRegion()
+            procEnv.pushRegion()
             defer {
-                env.popRegion()
+                procEnv.popRegion()
             }
             for (operand, param) in zip(operands, params) {
                 let operandValue = try evaluate(expr: operand, env: env)
-                env.bind(name: param, value: operandValue)
+                procEnv.bind(name: param, value: operandValue)
             }
 
             var last: SchemeValue? = nil
             for expr in body {
-                last = try evaluate(expr: expr, env: env)
+                last = try evaluate(expr: expr, env: procEnv)
             }
             return last!
 
