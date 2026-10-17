@@ -56,6 +56,60 @@ struct SchemeRuntime {
             }
             return .number(value: a + b)
         })))
+
+        environment.bind(
+            name: "*",
+            value: .nativeProcedure(
+                env: SchemeEnvironment(),
+                params: ["a", "b"],
+                callable: NativeProcedure(
+                    name: "*",
+                    arity: 2,
+                    invoke: { values in
+                        guard case .number(let a) = values[0] else {
+                            throw ParserError.init(pos: 0, kind: .unexpectedEOF)
+                        }
+                        guard case .number(let b) = values[1] else {
+                            throw ParserError.init(pos: 0, kind: .unexpectedEOF)
+                        }
+                        return .number(value: a * b)
+                    })))
+
+        environment.bind(
+            name: "-",
+            value: .nativeProcedure(
+                env: SchemeEnvironment(),
+                params: ["a", "b"],
+                callable: NativeProcedure(
+                    name: "-",
+                    arity: 2,
+                    invoke: { values in
+                        guard case .number(let a) = values[0] else {
+                            throw ParserError.init(pos: 0, kind: .unexpectedEOF)
+                        }
+                        guard case .number(let b) = values[1] else {
+                            throw ParserError.init(pos: 0, kind: .unexpectedEOF)
+                        }
+                        return .number(value: a - b)
+                    })))
+
+        environment.bind(
+            name: "<",
+            value: .nativeProcedure(
+                env: SchemeEnvironment(),
+                params: ["a", "b"],
+                callable: NativeProcedure(
+                    name: "<",
+                    arity: 2,
+                    invoke: { values in
+                        guard case .number(let a) = values[0] else {
+                            throw ParserError.init(pos: 0, kind: .unexpectedEOF)
+                        }
+                        guard case .number(let b) = values[1] else {
+                            throw ParserError.init(pos: 0, kind: .unexpectedEOF)
+                        }
+                        return .boolean(value: a < b)
+                    })))
     }
 
 

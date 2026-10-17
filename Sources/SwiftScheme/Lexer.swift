@@ -196,7 +196,9 @@ struct Lexer {
 
         guard let initial = char(at: index) else { return nil}
         if initial == "+" ||
-            initial == "*" {
+            initial == "*" ||
+            initial == "<" ||
+            initial == "-" {
                 let endPos = startPos + 1
                 return Token(start: startPos, end: endPos, value: .identifier(name: String(initial)))
             }

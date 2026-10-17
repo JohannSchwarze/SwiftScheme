@@ -35,7 +35,7 @@ struct Parser {
 
     mutating func parseProgram() throws -> Program {
         var defs: [Definition] = []
-        while let token = try lexer.next() {
+        while let token = try lexer.peek() {
             let def = try parseDefinition()
             defs.append(def)
         }

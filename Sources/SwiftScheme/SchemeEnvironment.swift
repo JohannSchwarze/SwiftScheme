@@ -1,7 +1,7 @@
 
 
 enum SchemeEnvironmentError: Error {
-    case unboundVariable
+    case unboundVariable(name: String)
 }
 
 
@@ -33,7 +33,7 @@ struct SchemeEnvironment<T: Equatable>: Equatable {
             }
         }
 
-        throw SchemeEnvironmentError.unboundVariable
+        throw SchemeEnvironmentError.unboundVariable(name: name)
     }
 }
 
