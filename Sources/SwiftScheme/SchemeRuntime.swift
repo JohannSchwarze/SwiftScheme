@@ -69,7 +69,7 @@ struct SchemeRuntime {
 
         case .conditional(let test, let consequence, let alternate):
             let testValue = try evaluate(expr: test, env: env)
-            if eqv(e1: testValue, e2: .boolean(value: false)){
+            if case .boolean(false) = testValue {
                 if let alternate {
                     return try evaluate(expr: alternate, env: env)
                 } else {
