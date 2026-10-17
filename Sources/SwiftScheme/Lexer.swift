@@ -83,6 +83,11 @@ struct Lexer {
             return identifier
         }
 
+        if let identifier = peekPeculiarIdentifier() {
+            self.pos = identifier.end
+            return identifier
+        }
+
         if let lparen = peekLParen() {
             self.pos = lparen.end
             return lparen
@@ -184,6 +189,21 @@ struct Lexer {
         return Token(start: startPos, end: index, value: .number(value: numberValue))
     }
 
+    func peekPeculiarIdentifier() -> Token? {
+        guard pos < endPos else { return nil }
+        let startPos = pos
+        var index = startPos
+
+        guard let initial = char(at: index) else { return nil}
+        if initial == "+" ||
+            initial == "*" {
+                let endPos = startPos + 1
+                return Token(start: startPos, end: endPos, value: .identifier(name: String(initial)))
+            }
+        
+        return nil
+    }
+
     func peekIdentifier() -> Token? {
         guard pos < endPos else { return nil }
         let startPos = pos
@@ -213,8 +233,6 @@ struct Lexer {
     func peekQuoteAbbr() -> Token? {
         return peekChar(exp: "'", value: .quoteAbbr)
     }
-
-
 
 
 

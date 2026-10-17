@@ -68,6 +68,12 @@ struct LexerTests {
         #expect(token?.value == .identifier(name: "abcdef"))
     }
 
+    @Test func testIdentifier02() throws {
+        let data = "+ 0 1"
+        var lexer = Lexer(data: data)
+        let token = try lexer.next()
+        #expect(token?.value == .identifier(name: "+"))
+    }
 
 
 
