@@ -99,4 +99,28 @@ struct SchemeRuntimeTests {
         let exp: SchemeValue = .number(value: 120)
         #expect(exp == value)
     }
+
+    @Test func testProgram02() throws {
+        var runtime = SchemeRuntime(environment: SchemeEnvironment())
+        try runtime.loadNativeProcedures()
+
+        let data = """
+        (define fib
+             (lambda (n)
+                (if (< n 2) n
+                     (+ (fib (- n 1)) (fib (- n 2))))))
+        """
+        var parser = Parser(lexer: Lexer(data: data))
+        let program = try parser.parseProgram()
+        try runtime.loadProgram(program: program)
+
+        #expect(try runtime.evaluate("(fib 1)", env: runtime.environment) == .number(value: 1))
+        #expect(try runtime.evaluate("(fib 2)", env: runtime.environment) == .number(value: 1))
+        #expect(try runtime.evaluate("(fib 3)", env: runtime.environment) == .number(value: 2))
+        #expect(try runtime.evaluate("(fib 4)", env: runtime.environment) == .number(value: 3))
+        #expect(try runtime.evaluate("(fib 5)", env: runtime.environment) == .number(value: 5))
+        #expect(try runtime.evaluate("(fib 6)", env: runtime.environment) == .number(value: 8))
+        #expect(try runtime.evaluate("(fib 7)", env: runtime.environment) == .number(value: 13))
+    }
+
 }
