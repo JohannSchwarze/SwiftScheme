@@ -3,7 +3,7 @@
 
 
 struct SchemeRuntime {
-    var environment: SchemeEnvironment<SchemeValue>
+    var environment: SchemeEnvironment<SchemeEnvironmentLocation<SchemeValue>>
 
 
 
@@ -21,7 +21,7 @@ struct SchemeRuntime {
             return "'\(value)"
         case .pair(let car, let cdr):
             return "(cons \(print(value: car)) \(print(value: cdr)))"
-        case .procedure(let env, let params, let body):
+        case .procedure(_, _, _):
             return "#procedure"
         case .nativeProcedure(_, _, _):
             return "#nativeProcedure"
@@ -41,8 +41,8 @@ struct SchemeRuntime {
     mutating func loadNativeProcedures() throws {
         environment.bind(
             name: "+", 
-            value: .nativeProcedure(
-                env: SchemeEnvironment(), 
+            value: SchemeEnvironmentLocation(value: .nativeProcedure(
+                env: SchemeEnvironment<SchemeEnvironmentLocation<SchemeValue>>(), 
                 params: ["a", "b"], 
                 callable: NativeProcedure(
                     name: "+", 
@@ -55,12 +55,12 @@ struct SchemeRuntime {
                 throw ParserError.init(pos: 0, kind: .unexpectedEOF)
             }
             return .number(value: a + b)
-        })))
+        }))))
 
         environment.bind(
             name: "*",
-            value: .nativeProcedure(
-                env: SchemeEnvironment(),
+            value: SchemeEnvironmentLocation(value: .nativeProcedure(
+                env: SchemeEnvironment<SchemeEnvironmentLocation<SchemeValue>>(),
                 params: ["a", "b"],
                 callable: NativeProcedure(
                     name: "*",
@@ -73,12 +73,12 @@ struct SchemeRuntime {
                             throw ParserError.init(pos: 0, kind: .unexpectedEOF)
                         }
                         return .number(value: a * b)
-                    })))
+                    }))))
 
         environment.bind(
             name: "-",
-            value: .nativeProcedure(
-                env: SchemeEnvironment(),
+            value: SchemeEnvironmentLocation(value: .nativeProcedure(
+                env: SchemeEnvironment<SchemeEnvironmentLocation<SchemeValue>>(),
                 params: ["a", "b"],
                 callable: NativeProcedure(
                     name: "-",
@@ -91,12 +91,12 @@ struct SchemeRuntime {
                             throw ParserError.init(pos: 0, kind: .unexpectedEOF)
                         }
                         return .number(value: a - b)
-                    })))
+                    }))))
 
         environment.bind(
             name: "<",
-            value: .nativeProcedure(
-                env: SchemeEnvironment(),
+            value: SchemeEnvironmentLocation(value: .nativeProcedure(
+                env: SchemeEnvironment<SchemeEnvironmentLocation<SchemeValue>>(),
                 params: ["a", "b"],
                 callable: NativeProcedure(
                     name: "<",
@@ -109,7 +109,7 @@ struct SchemeRuntime {
                             throw ParserError.init(pos: 0, kind: .unexpectedEOF)
                         }
                         return .boolean(value: a < b)
-                    })))
+                    }))))
     }
 
 
@@ -118,8 +118,10 @@ struct SchemeRuntime {
             guard case .variable(let name) = definition.variable.kind else {
                 throw ParserError.init(pos: 0, kind: .unexpectedEOF)
             }
+            let location = SchemeEnvironmentLocation<SchemeValue>(value: nil)
+            environment.bind(name: name, value: location)
             let value = try evaluate(expr: definition.expr, env: environment)
-            environment.bind(name: name, value: value)
+            location.value = value
         }
     }
 
@@ -143,13 +145,13 @@ struct SchemeRuntime {
     }
 
 
-    func evaluate(_ str: String, env: SchemeEnvironment<SchemeValue>) throws -> SchemeValue {
+    func evaluate(_ str: String, env: SchemeEnvironment<SchemeEnvironmentLocation<SchemeValue>>) throws -> SchemeValue {
         var parser = Parser(lexer: Lexer(data: str))
         let expr = try parser.parseExpression()
         return try evaluate(expr: expr, env: env)
     }
 
-    func evaluate(expr: Expr, env: SchemeEnvironment<SchemeValue>) throws -> SchemeValue {
+    func evaluate(expr: Expr, env: SchemeEnvironment<SchemeEnvironmentLocation<SchemeValue>>) throws -> SchemeValue {
         switch expr.kind {
         case .boolean(let value):
             return .boolean(value: value)
@@ -170,7 +172,9 @@ struct SchemeRuntime {
             }
         
         case .variable(let name):
-            return try env.value(name: name)
+            let location = try env.value(name: name)
+            guard let value = location.value else { throw SchemeEnvironmentError.unboundVariable(name: name) }
+            return value
         
         case .quotation(let datum):
             return try evaluate(datum: datum)
@@ -184,8 +188,10 @@ struct SchemeRuntime {
                     procEnv.popRegion()
                 }
                 for (operand, param) in zip(operands, params) {
+                    let location = SchemeEnvironmentLocation<SchemeValue>(value: nil)
+                    procEnv.bind(name: param, value: location)
                     let operandValue = try evaluate(expr: operand, env: env)
-                    procEnv.bind(name: param, value: operandValue)
+                    location.value = operandValue
                 }
 
                 var last: SchemeValue? = nil
@@ -201,9 +207,11 @@ struct SchemeRuntime {
                 }
                 var operandValues: [SchemeValue] = []
                 for (operand, param) in zip(operands, params) {
+                    let location = SchemeEnvironmentLocation<SchemeValue>(value: nil)
+                    procEnv.bind(name: param, value: location)
                     let operandValue = try evaluate(expr: operand, env: env)
+                    location.value = operandValue
                     operandValues.append(operandValue)
-                    procEnv.bind(name: param, value: operandValue)
                 }
 
                 let result = try callable.invoke(operandValues)

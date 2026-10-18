@@ -28,8 +28,8 @@ struct SchemeRuntimeTests {
 
     @Test func testVariable01() throws {
         let runtime = SchemeRuntime(environment: SchemeEnvironment())
-        var env = SchemeEnvironment<SchemeValue>()
-        env.bind(name: "x", value: .number(value: 12345))
+        var env = SchemeEnvironment<SchemeEnvironmentLocation<SchemeValue>>()
+        env.bind(name: "x", value: SchemeEnvironmentLocation(value: .number(value: 12345)))
         let value = try runtime.evaluate("x", env: env)
         let exp: SchemeValue = .number(value: 12345)
         #expect(exp == value)

@@ -35,8 +35,8 @@ indirect enum SchemeValue: Equatable {
     case symbol(value: String)
     case emptyList
     case pair(car: SchemeValue, cdr: SchemeValue)
-    case procedure(env: SchemeEnvironment<SchemeValue>, params: [String], body: [Expr])
-    case nativeProcedure(env: SchemeEnvironment<SchemeValue>, params: [String], callable: NativeProcedure)
+    case procedure(env: SchemeEnvironment<SchemeEnvironmentLocation<SchemeValue>>, params: [String], body: [Expr])
+    case nativeProcedure(env: SchemeEnvironment<SchemeEnvironmentLocation<SchemeValue>>, params: [String], callable: NativeProcedure)
 }
 
 

@@ -41,10 +41,14 @@ struct SchemeEnvironment<T: Equatable>: Equatable {
 
 
 
-class SchemeEnvironmentLocation<T> {
-    let value: T
+class SchemeEnvironmentLocation<T: Equatable>: Equatable {
+    var value: T?
 
-    init(value: T) {
+    init(value: T?) {
         self.value = value
+    }
+
+    static func ==(lhs: SchemeEnvironmentLocation<T>, rhs: SchemeEnvironmentLocation<T>) -> Bool {
+        return lhs === rhs
     }
 }
