@@ -123,4 +123,27 @@ struct SchemeRuntimeTests {
         #expect(try runtime.evaluate("(fib 7)", env: runtime.environment) == .number(value: 13))
     }
 
+    @Test func testProgram03() throws {
+        var runtime = SchemeRuntime(environment: SchemeEnvironment())
+        try runtime.loadNativeProcedures()
+        
+        let data = """
+        (define gen-counter
+        (lambda ()
+            ((lambda (n)
+                (lambda () (set! n (+ n 1)) n))
+            0)))
+        
+        (define counter (gen-counter))
+        """
+        var parser = Parser(lexer: Lexer(data: data))
+        let program = try parser.parseProgram()
+        try runtime.loadProgram(program: program)
+
+        #expect(try runtime.evaluate("(counter)", env: runtime.environment) == .number(value: 1))
+        #expect(try runtime.evaluate("(counter)", env: runtime.environment) == .number(value: 2))
+        #expect(try runtime.evaluate("(counter)", env: runtime.environment) == .number(value: 3))
+        #expect(try runtime.evaluate("(counter)", env: runtime.environment) == .number(value: 4))
+    }
+
 }

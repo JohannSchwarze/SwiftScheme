@@ -35,7 +35,7 @@ struct LexerTests {
 
 
 
-
+    
     @Test func testNumber01() throws {
         let data = "42"
         var lexer = Lexer(data: data)

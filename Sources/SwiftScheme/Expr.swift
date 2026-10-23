@@ -11,6 +11,7 @@ indirect enum ExprKind: Equatable {
     case procedureCall(operator: Expr, operands: [Expr])
     case procedure(params: [String], body: [Expr])
     case conditional(test: Expr, consequence: Expr, alternate: Expr?)
+    case asssignment(variable: String, expr: Expr)
 }
 
 

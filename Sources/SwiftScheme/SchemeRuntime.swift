@@ -159,6 +159,12 @@ struct SchemeRuntime {
         case .number(let value):
             return .number(value: value)
 
+        case .asssignment(let variable, let expr):
+            let location = try env.value(name: variable)
+            let value = try evaluate(expr: expr, env: env)
+            location.value = value
+            return value
+
         case .conditional(let test, let consequence, let alternate):
             let testValue = try evaluate(expr: test, env: env)
             if case .boolean(false) = testValue {
