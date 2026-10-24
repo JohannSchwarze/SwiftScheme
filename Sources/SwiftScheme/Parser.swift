@@ -150,7 +150,7 @@ struct Parser {
         guard let lambdaToken = try lexer.next() else { throw ParserError(pos: lparenToken.end, kind: .unexpectedEOF) }
         guard case .identifier("lambda") = lambdaToken.value else { throw ParserError(pos: lambdaToken.start, kind: .unexpectedTokenKind(exp: .identifier(name: "lambda"), act: lambdaToken.value)) }
 
-        let params = try parseFormals()
+        let (params, remainingParams) = try parseFormals()
 
         var body: [Expr] = []
         while let token = try lexer.peek(), token.value != .rparen {
@@ -165,24 +165,38 @@ struct Parser {
             throw ParserError(pos: rparenToken.start, kind: .unexpectedTokenKind(exp: .rparen, act: rparenToken.value)) 
         }
 
-        return Expr(start: lparenToken.start, end: rparenToken.end, kind: .procedure(params: params, body: body))
+        return Expr(start: lparenToken.start, end: rparenToken.end, kind: .procedure(params: params, remainingParams: remainingParams, body: body))
     }
 
-    mutating func parseFormals() throws -> [String] {
+    mutating func parseFormals() throws -> ([String], String?) {
         guard let lparenToken = try lexer.next() else { 
             throw ParserError(pos: lexer.pos, kind: .unexpectedEOF) 
         }
         guard case .lparen = lparenToken.value else { 
-            throw ParserError(pos: lparenToken.start, kind: .unexpectedTokenKind(exp: .lparen, act: lparenToken.value)) 
+            let varExpr = try parseVariable()
+            guard case .variable(let name) = varExpr.kind else {
+                throw ParserError(pos: lparenToken.start, kind: .unexpectedTokenKind(exp: .lparen, act: lparenToken.value)) 
+            }
+            return ([], name)
         }
 
         var params: [String] = []
-        while let token = try lexer.peek(), token.value != .rparen {
+        while let token = try lexer.peek(), token.value != .rparen, token.value != .period {
             let variable = try parseVariable()
             guard case .variable(let name) = variable.kind else {
                 throw ParserError(pos: lexer.pos, kind: .unexpectedEOF) 
             }
             params.append(name)
+        }
+
+        var remainingParams: String? = nil
+        if let token = try lexer.peek(), token.value == .period {
+            let _ = try lexer.next()
+            let varExpr = try parseVariable()
+            guard case .variable(let name) = varExpr.kind else {
+                throw ParserError(pos: lparenToken.start, kind: .unexpectedTokenKind(exp: .lparen, act: lparenToken.value)) 
+            }
+            remainingParams = name
         }
 
         guard let rparenToken = try lexer.next() else { 
@@ -192,7 +206,7 @@ struct Parser {
             throw ParserError(pos: rparenToken.start, kind: .unexpectedTokenKind(exp: .rparen, act: rparenToken.value)) 
         }
 
-        return params
+        return (params, remainingParams)
     }
 
     mutating func parseConditional() throws -> Expr {

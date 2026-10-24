@@ -103,6 +103,11 @@ struct Lexer {
             return quoteAbbr
         }
 
+        if let period = peekPeriod() {
+            self.pos = period.end
+            return period
+        }
+
         throw LexerError(pos: pos, kind: .unrecognizedToken)
     }
 
@@ -236,6 +241,9 @@ struct Lexer {
         return peekChar(exp: "'", value: .quoteAbbr)
     }
 
+    func peekPeriod() -> Token? {
+        return peekChar(exp: ".", value: .period)
+    }
 
 
 

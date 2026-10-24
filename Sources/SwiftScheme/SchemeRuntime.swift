@@ -21,7 +21,7 @@ struct SchemeRuntime {
             return "'\(value)"
         case .pair(let car, let cdr):
             return "(cons \(print(value: car)) \(print(value: cdr)))"
-        case .procedure(_, _, _):
+        case .procedure(_, _, _, _):
             return "#procedure"
         case .nativeProcedure(_, _, _):
             return "#nativeProcedure"
@@ -188,7 +188,7 @@ struct SchemeRuntime {
         case .procedureCall(let op, let operands):
             let proc = try evaluate(expr: op, env: env)
 
-            if case .procedure(var procEnv, let params, let body) = proc {
+            if case .procedure(var procEnv, let params, let remainingParams, let body) = proc {
                 procEnv.pushRegion()
                 defer {
                     procEnv.popRegion()
@@ -198,6 +198,21 @@ struct SchemeRuntime {
                     procEnv.bind(name: param, value: location)
                     let operandValue = try evaluate(expr: operand, env: env)
                     location.value = operandValue
+                }
+
+                let remainingOperandsCount = min(0, operands.count - params.count)
+                if let remainingParams {
+                    let location = SchemeEnvironmentLocation<SchemeValue>(value: nil)
+                    procEnv.bind(name: remainingParams, value: location)
+
+                    var remainingOperandsValue = SchemeValue.emptyList
+                    for i in 0..<remainingOperandsCount {
+                        let k = operands.count - i - 1
+                        let operandValue = try evaluate(expr: operands[i], env: env)
+                        remainingOperandsValue = .pair(car: operandValue, cdr: remainingOperandsValue)
+                    }
+
+                    location.value = remainingOperandsValue
                 }
 
                 var last: SchemeValue? = nil
@@ -226,8 +241,8 @@ struct SchemeRuntime {
                 throw ParserError.init(pos: 0, kind: .unexpectedEOF)
             }
 
-        case .procedure(let params, let body):
-            return .procedure(env: env, params: params, body: body)
+        case .procedure(let params, let remainingParams, let body):
+            return .procedure(env: env, params: params, remainingParams: remainingParams, body: body)
         }
     }
 }

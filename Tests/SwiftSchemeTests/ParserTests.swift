@@ -88,7 +88,7 @@ struct ParserTests {
         let data: String = "(lambda (x) (a x 1))"
         var parser = Parser(lexer: Lexer(data: data))
         let expr = try parser.parseExpression()
-        #expect(expr.kind == .procedure(params: ["x"], body: [
+        #expect(expr.kind == .procedure(params: ["x"], remainingParams: nil, body: [
             .init(start: 12, end: 19, kind: 
             .procedureCall(operator: .init(start: 13, end: 14, kind: .variable("a")), operands: [
                 .init(start: 15, end: 16, kind: .variable("x")),

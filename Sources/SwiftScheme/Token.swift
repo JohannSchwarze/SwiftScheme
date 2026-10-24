@@ -9,6 +9,7 @@ enum TokenValue: Equatable {
     case rparen
     case lparenHash
     case quoteAbbr
+    case period
 }
 
 struct Token: Equatable {

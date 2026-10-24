@@ -9,7 +9,7 @@ indirect enum ExprKind: Equatable {
     case number(Int)
     case quotation(Datum)
     case procedureCall(operator: Expr, operands: [Expr])
-    case procedure(params: [String], body: [Expr])
+    case procedure(params: [String], remainingParams: String?, body: [Expr])
     case conditional(test: Expr, consequence: Expr, alternate: Expr?)
     case asssignment(variable: String, expr: Expr)
 }
