@@ -110,6 +110,51 @@ struct SchemeRuntime {
                         }
                         return .boolean(value: a < b)
                     }))))
+
+        environment.bind(
+            name: "car",
+            value: SchemeEnvironmentLocation(value: .nativeProcedure(
+                env: SchemeEnvironment<SchemeEnvironmentLocation<SchemeValue>>(),
+                params: ["pair"],
+                callable: NativeProcedure(
+                    name: "car",
+                    arity: 1,
+                    invoke: { values in
+                        guard case .pair(let car, _) = values[0] else {
+                            throw ParserError.init(pos: 0, kind: .unexpectedEOF)
+                        }
+                        return car
+                    }))))
+
+        environment.bind(
+            name: "cdr",
+            value: SchemeEnvironmentLocation(value: .nativeProcedure(
+                env: SchemeEnvironment<SchemeEnvironmentLocation<SchemeValue>>(),
+                params: ["pair"],
+                callable: NativeProcedure(
+                    name: "cdr",
+                    arity: 1,
+                    invoke: { values in
+                        guard case .pair(_, let cdr) = values[0] else {
+                            throw ParserError.init(pos: 0, kind: .unexpectedEOF)
+                        }
+                        return cdr
+                    }))))
+
+        environment.bind(
+            name: "null?",
+            value: SchemeEnvironmentLocation(value: .nativeProcedure(
+                env: SchemeEnvironment<SchemeEnvironmentLocation<SchemeValue>>(),
+                params: ["value"],
+                callable: NativeProcedure(
+                    name: "null?",
+                    arity: 1,
+                    invoke: { values in
+                        if case .emptyList = values[0] {
+                            return .boolean(value: true)
+                        }
+                        return .boolean(value: false)
+                    }))))
     }
 
 
@@ -200,7 +245,7 @@ struct SchemeRuntime {
                     location.value = operandValue
                 }
 
-                let remainingOperandsCount = min(0, operands.count - params.count)
+                let remainingOperandsCount = max(0, operands.count - params.count)
                 if let remainingParams {
                     let location = SchemeEnvironmentLocation<SchemeValue>(value: nil)
                     procEnv.bind(name: remainingParams, value: location)
@@ -208,7 +253,7 @@ struct SchemeRuntime {
                     var remainingOperandsValue = SchemeValue.emptyList
                     for i in 0..<remainingOperandsCount {
                         let k = operands.count - i - 1
-                        let operandValue = try evaluate(expr: operands[i], env: env)
+                        let operandValue = try evaluate(expr: operands[k], env: env)
                         remainingOperandsValue = .pair(car: operandValue, cdr: remainingOperandsValue)
                     }
 

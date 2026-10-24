@@ -65,8 +65,8 @@ struct Lexer {
 
     mutating func next() throws -> Token? {
         guard pos < endPos else { return nil }
-
         skipWhitespace()
+        guard pos < endPos else { return nil }
 
         if let boolean = peekBoolean() {
             self.pos = boolean.end

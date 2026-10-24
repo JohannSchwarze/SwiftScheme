@@ -35,7 +35,7 @@ struct LexerTests {
 
 
 
-    
+
     @Test func testNumber01() throws {
         let data = "42"
         var lexer = Lexer(data: data)
@@ -113,6 +113,16 @@ struct LexerTests {
 
         #expect(try lexer.peek()?.value == .identifier(name: "b"))
         #expect(try lexer.next()?.value == .identifier(name: "b"))
+    }
+
+
+
+    @Test func testEOF() throws {
+        let data = "\t\t\t   "
+        var lexer = Lexer(data: data)
+
+        let token = try lexer.next()
+        #expect(token == nil)
     }
 }
 

@@ -79,6 +79,17 @@ struct SchemeRuntimeTests {
         #expect(exp == value)
     }
 
+    @Test func testNativePairSelectors() throws {
+        var runtime = SchemeRuntime(environment: SchemeEnvironment())
+        try runtime.loadNativeProcedures()
+
+        #expect(try runtime.evaluate("(car '(1 2))", env: runtime.environment) == .number(value: 1))
+        #expect(
+            try runtime.evaluate("(cdr '(1 2))", env: runtime.environment)
+                == .pair(car: .number(value: 2), cdr: .emptyList)
+        )
+    }
+
 
 
     @Test func testProgram01() throws {
@@ -126,7 +137,7 @@ struct SchemeRuntimeTests {
     @Test func testProgram03() throws {
         var runtime = SchemeRuntime(environment: SchemeEnvironment())
         try runtime.loadNativeProcedures()
-        
+
         let data = """
         (define gen-counter
         (lambda ()
@@ -144,6 +155,28 @@ struct SchemeRuntimeTests {
         #expect(try runtime.evaluate("(counter)", env: runtime.environment) == .number(value: 2))
         #expect(try runtime.evaluate("(counter)", env: runtime.environment) == .number(value: 3))
         #expect(try runtime.evaluate("(counter)", env: runtime.environment) == .number(value: 4))
+    }
+
+    @Test func testProgram04() throws {
+        var runtime = SchemeRuntime(environment: SchemeEnvironment())
+        try runtime.loadNativeProcedures()
+
+        let data = """
+        (define my-length
+            (lambda (xs)
+                (if (null? xs) 0
+                    (+ 1 (my-length (cdr xs))))))
+        
+        (define count-args
+            (lambda args
+                (my-length args)))        
+        """
+        var parser = Parser(lexer: Lexer(data: data))
+        let program = try parser.parseProgram()
+        try runtime.loadProgram(program: program)
+
+        let value = try runtime.evaluate("(count-args 1 2 3)", env: runtime.environment)
+        #expect(value == .number(value: 3))
     }
 
 }

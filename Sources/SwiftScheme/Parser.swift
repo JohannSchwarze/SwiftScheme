@@ -169,7 +169,7 @@ struct Parser {
     }
 
     mutating func parseFormals() throws -> ([String], String?) {
-        guard let lparenToken = try lexer.next() else { 
+        guard let lparenToken = try lexer.peek() else { 
             throw ParserError(pos: lexer.pos, kind: .unexpectedEOF) 
         }
         guard case .lparen = lparenToken.value else { 
@@ -179,6 +179,7 @@ struct Parser {
             }
             return ([], name)
         }
+        let _ = try lexer.next()
 
         var params: [String] = []
         while let token = try lexer.peek(), token.value != .rparen, token.value != .period {
