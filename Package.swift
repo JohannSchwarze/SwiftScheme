@@ -11,12 +11,20 @@ let package = Package(
             name: "SwiftScheme",
             targets: ["SwiftScheme"]
         ),
+        .executable(
+            name: "swift-scheme",
+            targets: ["SwiftSchemeCLI"]
+        ),
     ],
     targets: [
         // Targets are the basic building blocks of a package, defining a module or a test suite.
         // Targets can depend on other targets in this package and products from dependencies.
         .target(
             name: "SwiftScheme"
+        ),
+        .executableTarget(
+            name: "SwiftSchemeCLI",
+            dependencies: ["SwiftScheme"]
         ),
         .testTarget(
             name: "SwiftSchemeTests",

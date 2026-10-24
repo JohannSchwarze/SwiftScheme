@@ -1,0 +1,24 @@
+{
+    "configurations": [
+        {
+            "type": "swift",
+            "request": "launch",
+            "args": [],
+            "cwd": "${workspaceFolder:SwiftScheme}",
+            "name": "Debug swift-scheme",
+            "target": "swift-scheme",
+            "configuration": "debug",
+            "preLaunchTask": "swift: Build Debug swift-scheme"
+        },
+        {
+            "type": "swift",
+            "request": "launch",
+            "args": [],
+            "cwd": "${workspaceFolder:SwiftScheme}",
+            "name": "Release swift-scheme",
+            "target": "swift-scheme",
+            "configuration": "release",
+            "preLaunchTask": "swift: Build Release swift-scheme"
+        }
+    ]
+}
