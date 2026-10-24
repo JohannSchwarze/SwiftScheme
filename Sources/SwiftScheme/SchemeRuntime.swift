@@ -23,7 +23,7 @@ struct SchemeRuntime {
             return "(cons \(print(value: car)) \(print(value: cdr)))"
         case .procedure(_, _, _, _):
             return "#procedure"
-        case .nativeProcedure(_, _, _):
+        case .nativeProcedure(_, _, _, _):
             return "#nativeProcedure"
         }
     }
@@ -43,72 +43,111 @@ struct SchemeRuntime {
             name: "+", 
             value: SchemeEnvironmentLocation(value: .nativeProcedure(
                 env: SchemeEnvironment<SchemeEnvironmentLocation<SchemeValue>>(), 
-                params: ["a", "b"], 
+                params: [],
+                remainingParams: "xs", 
                 callable: NativeProcedure(
                     name: "+", 
-                    arity: 2,
-                    invoke: { values in
-            guard case .number(let a) = values[0] else {
-                throw ParserError.init(pos: 0, kind: .unexpectedEOF)
-            }
-            guard case .number(let b) = values[1] else {
-                throw ParserError.init(pos: 0, kind: .unexpectedEOF)
-            }
-            return .number(value: a + b)
+                    arity: nil,
+                    invoke: { env in
+
+                    var sum: Int = 0
+                    if var list = try env.value(name: "xs").value {
+                        while case .pair(let car, let cdr) = list {
+                            guard case .number(let num) = car else {
+                                throw ParserError.init(pos: 0, kind: .unexpectedEOF)
+                            }
+                            sum += num
+                            list = cdr
+                        }
+                    }
+                    return .number(value: sum)
         }))))
 
         environment.bind(
             name: "*",
             value: SchemeEnvironmentLocation(value: .nativeProcedure(
                 env: SchemeEnvironment<SchemeEnvironmentLocation<SchemeValue>>(),
-                params: ["a", "b"],
+                params: [],
+                remainingParams: "xs",
                 callable: NativeProcedure(
                     name: "*",
-                    arity: 2,
-                    invoke: { values in
-                        guard case .number(let a) = values[0] else {
-                            throw ParserError.init(pos: 0, kind: .unexpectedEOF)
+                    arity: nil,
+                    invoke: { env in
+                        var product = 1
+                        if var list = try env.value(name: "xs").value {
+                            while case .pair(let car, let cdr) = list {
+                                guard case .number(let num) = car else {
+                                    throw ParserError.init(pos: 0, kind: .unexpectedEOF)
+                                }
+                                product *= num
+                                list = cdr
+                            }
                         }
-                        guard case .number(let b) = values[1] else {
-                            throw ParserError.init(pos: 0, kind: .unexpectedEOF)
-                        }
-                        return .number(value: a * b)
+                        return .number(value: product)
                     }))))
 
         environment.bind(
             name: "-",
             value: SchemeEnvironmentLocation(value: .nativeProcedure(
                 env: SchemeEnvironment<SchemeEnvironmentLocation<SchemeValue>>(),
-                params: ["a", "b"],
+                params: [],
+                remainingParams: "xs",
                 callable: NativeProcedure(
                     name: "-",
-                    arity: 2,
-                    invoke: { values in
-                        guard case .number(let a) = values[0] else {
+                    arity: nil,
+                    invoke: { env in
+                        guard var list = try env.value(name: "xs").value,
+                              case .pair(let first, let rest) = list,
+                              case .number(let firstNumber) = first else {
                             throw ParserError.init(pos: 0, kind: .unexpectedEOF)
                         }
-                        guard case .number(let b) = values[1] else {
-                            throw ParserError.init(pos: 0, kind: .unexpectedEOF)
+                        var result = firstNumber
+                        var hasSubsequentOperand = false
+                        list = rest
+                        while case .pair(let car, let cdr) = list {
+                            guard case .number(let num) = car else {
+                                throw ParserError.init(pos: 0, kind: .unexpectedEOF)
+                            }
+                            result -= num
+                            hasSubsequentOperand = true
+                            list = cdr
                         }
-                        return .number(value: a - b)
+                        if !hasSubsequentOperand {
+                            result = -result
+                        }
+                        return .number(value: result)
                     }))))
 
         environment.bind(
             name: "<",
             value: SchemeEnvironmentLocation(value: .nativeProcedure(
                 env: SchemeEnvironment<SchemeEnvironmentLocation<SchemeValue>>(),
-                params: ["a", "b"],
+                params: [],
+                remainingParams: "xs",
                 callable: NativeProcedure(
                     name: "<",
-                    arity: 2,
-                    invoke: { values in
-                        guard case .number(let a) = values[0] else {
+                    arity: nil,
+                    invoke: { env in
+                        guard var list = try env.value(name: "xs").value,
+                              case .pair(let first, let rest) = list,
+                              case .number(let previous) = first,
+                              case .pair = rest else {
                             throw ParserError.init(pos: 0, kind: .unexpectedEOF)
                         }
-                        guard case .number(let b) = values[1] else {
-                            throw ParserError.init(pos: 0, kind: .unexpectedEOF)
+
+                        list = rest
+                        var previousNumber = previous
+                        while case .pair(let car, let cdr) = list {
+                            guard case .number(let num) = car else {
+                                throw ParserError.init(pos: 0, kind: .unexpectedEOF)
+                            }
+                            if previousNumber >= num {
+                                return .boolean(value: false)
+                            }
+                            previousNumber = num
+                            list = cdr
                         }
-                        return .boolean(value: a < b)
+                        return .boolean(value: true)
                     }))))
 
         environment.bind(
@@ -116,11 +155,12 @@ struct SchemeRuntime {
             value: SchemeEnvironmentLocation(value: .nativeProcedure(
                 env: SchemeEnvironment<SchemeEnvironmentLocation<SchemeValue>>(),
                 params: ["pair"],
+                remainingParams: nil,
                 callable: NativeProcedure(
                     name: "car",
                     arity: 1,
-                    invoke: { values in
-                        guard case .pair(let car, _) = values[0] else {
+                    invoke: { env in
+                        guard case .pair(let car, _) = try env.value(name: "pair").value else {
                             throw ParserError.init(pos: 0, kind: .unexpectedEOF)
                         }
                         return car
@@ -131,11 +171,12 @@ struct SchemeRuntime {
             value: SchemeEnvironmentLocation(value: .nativeProcedure(
                 env: SchemeEnvironment<SchemeEnvironmentLocation<SchemeValue>>(),
                 params: ["pair"],
+                remainingParams: nil,
                 callable: NativeProcedure(
                     name: "cdr",
                     arity: 1,
-                    invoke: { values in
-                        guard case .pair(_, let cdr) = values[0] else {
+                    invoke: { env in
+                        guard case .pair(_, let cdr) = try env.value(name: "pair").value else {
                             throw ParserError.init(pos: 0, kind: .unexpectedEOF)
                         }
                         return cdr
@@ -146,11 +187,12 @@ struct SchemeRuntime {
             value: SchemeEnvironmentLocation(value: .nativeProcedure(
                 env: SchemeEnvironment<SchemeEnvironmentLocation<SchemeValue>>(),
                 params: ["value"],
+                remainingParams: nil,
                 callable: NativeProcedure(
                     name: "null?",
                     arity: 1,
-                    invoke: { values in
-                        if case .emptyList = values[0] {
+                    invoke: { env in
+                        if case .emptyList = try env.value(name: "value").value {
                             return .boolean(value: true)
                         }
                         return .boolean(value: false)
@@ -266,7 +308,7 @@ struct SchemeRuntime {
                 }
                 return last!
 
-            } else if case .nativeProcedure(var procEnv, let params, let callable) = proc {
+            } else if case .nativeProcedure(var procEnv, let params, let remainingParams, let callable) = proc {
                 procEnv.pushRegion()
                 defer {
                     procEnv.popRegion()
@@ -280,7 +322,22 @@ struct SchemeRuntime {
                     operandValues.append(operandValue)
                 }
 
-                let result = try callable.invoke(operandValues)
+                let remainingOperandsCount = max(0, operands.count - params.count)
+                if let remainingParams {
+                    let location = SchemeEnvironmentLocation<SchemeValue>(value: nil)
+                    procEnv.bind(name: remainingParams, value: location)
+
+                    var remainingOperandsValue = SchemeValue.emptyList
+                    for i in 0..<remainingOperandsCount {
+                        let k = operands.count - i - 1
+                        let operandValue = try evaluate(expr: operands[k], env: env)
+                        remainingOperandsValue = .pair(car: operandValue, cdr: remainingOperandsValue)
+                    }
+
+                    location.value = remainingOperandsValue
+                }
+
+                let result = try callable.invoke(procEnv)
                 return result
             } else {
                 throw ParserError.init(pos: 0, kind: .unexpectedEOF)
