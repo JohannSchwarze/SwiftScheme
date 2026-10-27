@@ -5,7 +5,7 @@
 
 
 
-struct FilePos {
+struct FilePos: Equatable {
     let pos: Int
     let col: Int
     let line: Int
@@ -30,7 +30,14 @@ struct CharacterSource {
     private(set) var line: Int
 
     var filePos: FilePos {
-        FilePos(pos: pos, col: col, line: line)
+        get {
+            FilePos(pos: pos, col: col, line: line)
+        }
+        set {
+            self.pos = newValue.pos
+            self.col = newValue.col
+            self.line = newValue.line
+        }
     }
 
     private var posStack: [FilePos] 
@@ -128,7 +135,7 @@ enum LexerErrorKind: Error, Equatable {
 }
 
 struct LexerError: Error, Equatable {
-    let pos: Int
+    let pos: FilePos
     let kind: LexerErrorKind
 }
 
@@ -141,227 +148,200 @@ struct LexerError: Error, Equatable {
 
 
 struct Lexer {
-    let data: String
-    var pos: Int
-    var endPos: Int
-
-    var positionStack: [Int] = []
+    var source: CharacterSource
+    var pos: FilePos {
+        source.filePos
+    }
 
     init(data: String) {
-        self.data = data
-        self.pos = 0
-        self.endPos = data.count
+        self.source = CharacterSource(data: data)
     }
 
-
-
-    mutating func pushPosition() {
-        positionStack.append(pos)
-    }
-
-    mutating func popPosition() {
-        self.pos = positionStack.removeLast()
-    }
-
-    mutating func forgetPosition() {
-        let _ = positionStack.removeLast()
-    }
 
 
     mutating func peek() throws -> Token? {
-        self.pushPosition()
+        source.pushPosition()
         let token = try self.next()
-        self.popPosition()
+        source.popPosition()
         return token
     }
 
     mutating func peek2() throws -> Token? {
-        self.pushPosition()
+        source.pushPosition()
         let _ = try self.next()
         let token = try self.next()
-        self.popPosition()
+        source.popPosition()
         return token
     }
 
     mutating func next() throws -> Token? {
-        guard pos < endPos else { return nil }
-        skipWhitespace()
-        guard pos < endPos else { return nil }
+        guard let _ = source.peekChar() else { return nil }
+        source.skipWhitespace()
+        guard let _ = source.peekChar() else { return nil }
 
         if let boolean = peekBoolean() {
-            self.pos = boolean.end
+            source.filePos = boolean.end
             return boolean
         }
 
         if let number = peekNumber() {
-            self.pos = number.end
+            source.filePos = number.end
             return number
         }
 
         if let identifier = peekIdentifier() {
-            self.pos = identifier.end
+            source.filePos = identifier.end
             return identifier
         }
 
         if let identifier = peekPeculiarIdentifier() {
-            self.pos = identifier.end
+            source.filePos = identifier.end
             return identifier
         }
 
         if let lparen = peekLParen() {
-            self.pos = lparen.end
+            source.filePos = lparen.end
             return lparen
         }
 
         if let rparen = peekRParen() {
-            self.pos = rparen.end
+            source.filePos = rparen.end
             return rparen
         }
 
         if let quoteAbbr = peekQuoteAbbr() {
-            self.pos = quoteAbbr.end
+            source.filePos = quoteAbbr.end
             return quoteAbbr
         }
 
         if let period = peekPeriod() {
-            self.pos = period.end
+            source.filePos = period.end
             return period
         }
 
-        throw LexerError(pos: pos, kind: .unrecognizedToken)
-    }
-
-
-    private func char(at index: Int) -> Character? {
-        guard 0 <= index, index < endPos else { return nil }
-        return data[data.index(data.startIndex, offsetBy: index)]
+        throw LexerError(pos: source.filePos, kind: .unrecognizedToken)
     }
 
 
 
 
 
-    mutating func skipWhitespace() {
-        var index = pos
-        var updatedIndex: Bool = true
-        while updatedIndex {
-            updatedIndex = false
-            while let ch = char(at: index), ch.isWhitespace {
-                index += 1
-                updatedIndex = true
-            }
-            if let ch = char(at: index), ch == ";" {
-                while let ch = char(at: index), !ch.isNewline {
-                    index += 1
-                    updatedIndex = true
-                }
-            }
+
+
+
+
+
+
+
+    private mutating func peekChar(exp: Character, value: TokenValue) -> Token? {
+        let startPos = source.filePos
+        source.pushPosition()
+        defer {
+            source.popPosition()
         }
-        self.pos = index
-    }
-
-
-
-
-
-
-    private func peekChar(exp: Character, value: TokenValue) -> Token? {
-        guard let ch = char(at: pos) else { return nil }
+        guard let ch = source.nextChar() else { return nil }
         guard ch == exp else { return nil }
-        return Token(start: pos, end: pos + 1, value: value)
+        let endPos = source.filePos
+        return Token(start: startPos, end: endPos, value: value)
     }
 
-    func peekBoolean() -> Token? {
-        guard pos < endPos else { return nil }
-        let startPos = pos
-        guard let hashChar = char(at: startPos) else {
+    mutating func peekBoolean() -> Token? {
+        let startPos = source.filePos
+        source.pushPosition()
+        defer {
+            source.popPosition()
+        }
+        guard let hashChar = source.nextChar() else {
             return nil
         }
-        guard let valueChar = char(at: startPos + 1) else {
+        guard let valueChar = source.nextChar() else {
             return nil
         }
+        let endPos = source.filePos
         guard hashChar == "#" else { return nil }
         if valueChar == "t" {
-            return Token(start: startPos, end: startPos + 2, value: .boolean(value: true))
+            return Token(start: startPos, end: endPos, value: .boolean(value: true))
         } else if valueChar == "f" {
-            return Token(start: startPos, end: startPos + 2, value: .boolean(value: false))
+            return Token(start: startPos, end: endPos, value: .boolean(value: false))
         } else {
             return nil
         }
     }
 
-    func peekNumber() -> Token? {
-        guard pos < endPos else { return nil }
-        let startPos = pos
-        var index = pos
+    mutating func peekNumber() -> Token? {
+        let startPos = source.filePos
+        source.pushPosition()
+        defer { source.popPosition() }
 
-        if let sign = char(at: index), sign == "+" || sign == "-" {
-            index += 1
+        if let sign = source.peekChar(), sign == "+" || sign == "-" {
+            let _ = source.nextChar()
         }
 
-        guard index < endPos else { return nil }
-        guard let current = char(at: index), current.isNumber else { return nil }
+        guard let current = source.nextChar(), current.isNumber else { return nil }
 
-        while let nextChar = char(at: index), nextChar.isNumber {
-            index += 1
+        while let nextChar = source.peekChar(), nextChar.isNumber {
+            let _ = self.source.nextChar()
         }
 
-        let startIndex = data.index(data.startIndex, offsetBy: startPos)
-        let endIndex = data.index(data.startIndex, offsetBy: index)
-        let numberString = String(data[startIndex..<endIndex])
+        let endPos = source.filePos
+
+        let startIndex = source.data.index(source.data.startIndex, offsetBy: startPos.pos)
+        let endIndex = source.data.index(source.data.startIndex, offsetBy: endPos.pos)
+        let numberString = String(source.data[startIndex..<endIndex])
 
         guard let numberValue = Int(numberString) else { return nil }
-        return Token(start: startPos, end: index, value: .number(value: numberValue))
+        return Token(start: startPos, end: endPos, value: .number(value: numberValue))
     }
 
-    func peekPeculiarIdentifier() -> Token? {
-        guard pos < endPos else { return nil }
-        let startPos = pos
-        var index = startPos
+    mutating func peekPeculiarIdentifier() -> Token? {
+        let startPos = source.filePos
+        source.pushPosition()
+        defer { source.popPosition() }
 
-        guard let initial = char(at: index) else { return nil}
+        guard let initial = source.nextChar() else { return nil }
         if initial == "+" ||
             initial == "*" ||
             initial == "<" ||
             initial == "-" {
-                let endPos = startPos + 1
+                let endPos = source.filePos
                 return Token(start: startPos, end: endPos, value: .identifier(name: String(initial)))
             }
         
         return nil
     }
 
-    func peekIdentifier() -> Token? {
-        guard pos < endPos else { return nil }
-        let startPos = pos
-        var index = startPos
+    mutating func peekIdentifier() -> Token? {
+        let startPos = source.filePos
+        source.pushPosition()
+        defer { source.popPosition() }
 
-        guard let initial = char(at: index) else { return nil }
+        guard let initial = source.nextChar() else { return nil }
         guard isInitial(initial) else { return nil }
 
-        while let nextChar = char(at: index), isSubsequent(nextChar) {
-            index += 1
+        while let nextChar = source.peekChar(), isSubsequent(nextChar) {
+            let _ = source.nextChar()
         }
+        let endPos = source.filePos
 
-        let startIndex = data.index(data.startIndex, offsetBy: startPos)
-        let endIndex = data.index(data.startIndex, offsetBy: index)
-        let identifier = String(data[startIndex..<endIndex])
-        return Token(start: startPos, end: index, value: .identifier(name: identifier))
+        let startIndex = source.data.index(source.data.startIndex, offsetBy: startPos.pos)
+        let endIndex = source.data.index(source.data.startIndex, offsetBy: endPos.pos)
+        let identifier = String(source.data[startIndex..<endIndex])
+        return Token(start: startPos, end: endPos, value: .identifier(name: identifier))
     }
     
-    func peekLParen() -> Token? {
+    mutating func peekLParen() -> Token? {
         return peekChar(exp: "(", value: .lparen)
     }
 
-    func peekRParen() -> Token? {
+    mutating func peekRParen() -> Token? {
         return peekChar(exp: ")", value: .rparen)
     }
 
-    func peekQuoteAbbr() -> Token? {
+    mutating func peekQuoteAbbr() -> Token? {
         return peekChar(exp: "'", value: .quoteAbbr)
     }
 
-    func peekPeriod() -> Token? {
+    mutating func peekPeriod() -> Token? {
         return peekChar(exp: ".", value: .period)
     }
 

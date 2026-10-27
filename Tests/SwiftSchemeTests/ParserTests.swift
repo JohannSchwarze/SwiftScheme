@@ -13,12 +13,12 @@ struct ParserTests {
         var parser = Parser(lexer: Lexer(data: data))
         let datum = try parser.parseDatum()
         #expect(datum.kind == .list(value: [
-            .init(start: 1, end: 6, kind: .symbol(value: "hello")),
-            .init(start: 7, end: 8, kind: .number(value: 1)),
-            .init(start: 9, end: 10, kind: .number(value: 2)),
-            .init(start: 11, end: 12, kind: .symbol(value: "a")),
-            .init(start: 13, end: 14, kind: .symbol(value: "b")),
-            .init(start: 15, end: 16, kind: .number(value: 3)),
+            .init(start: FilePos(pos: 1, col: 1, line: 0), end: FilePos(pos: 6, col: 6, line: 0), kind: .symbol(value: "hello")),
+            .init(start: FilePos(pos: 7, col: 7, line: 0), end: FilePos(pos: 8, col: 8, line: 0), kind: .number(value: 1)),
+            .init(start: FilePos(pos: 9, col: 9, line: 0), end: FilePos(pos: 10, col: 10, line: 0), kind: .number(value: 2)),
+            .init(start: FilePos(pos: 11, col: 11, line: 0), end: FilePos(pos: 12, col: 12, line: 0), kind: .symbol(value: "a")),
+            .init(start: FilePos(pos: 13, col: 13, line: 0), end: FilePos(pos: 14, col: 14, line: 0), kind: .symbol(value: "b")),
+            .init(start: FilePos(pos: 15, col: 15, line: 0), end: FilePos(pos: 16, col: 16, line: 0), kind: .number(value: 3)),
         ]))
     }
 
@@ -27,14 +27,14 @@ struct ParserTests {
         var parser = Parser(lexer: Lexer(data: data))
         let datum = try parser.parseDatum()
         #expect(datum.kind == .list(value: [
-            .init(start: 1, end: 7, kind: .symbol(value: "lambda")),
-            .init(start: 8, end: 11, kind: .list(value: [
-                .init(start: 9, end: 10, kind: .symbol(value: "x")),
+            .init(start: FilePos(pos: 1, col: 1, line: 0), end: FilePos(pos: 7, col: 7, line: 0), kind: .symbol(value: "lambda")),
+            .init(start: FilePos(pos: 8, col: 8, line: 0), end: FilePos(pos: 11, col: 11, line: 0), kind: .list(value: [
+                .init(start: FilePos(pos: 9, col: 9, line: 0), end: FilePos(pos: 10, col: 10, line: 0), kind: .symbol(value: "x")),
             ])),
-            .init(start: 12, end: 21, kind: .list(value: [
-                .init(start: 13, end: 16, kind: .symbol(value: "add")),
-                .init(start: 17, end: 18, kind: .symbol(value: "x")),
-                .init(start: 19, end: 20, kind: .number(value: 1)),
+            .init(start: FilePos(pos: 12, col: 12, line: 0), end: FilePos(pos: 21, col: 21, line: 0), kind: .list(value: [
+                .init(start: FilePos(pos: 13, col: 13, line: 0), end: FilePos(pos: 16, col: 16, line: 0), kind: .symbol(value: "add")),
+                .init(start: FilePos(pos: 17, col: 17, line: 0), end: FilePos(pos: 18, col: 18, line: 0), kind: .symbol(value: "x")),
+                .init(start: FilePos(pos: 19, col: 19, line: 0), end: FilePos(pos: 20, col: 20, line: 0), kind: .number(value: 1)),
             ])),
         ]))
     }
@@ -50,11 +50,11 @@ struct ParserTests {
         var parser = Parser(lexer: Lexer(data: data))
         let expr = try parser.parseExpression()
         #expect(expr.kind == .procedureCall(
-            operator: .init(start: 1, end: 6, kind: .variable("hello")), 
+            operator: .init(start: FilePos(pos: 1, col: 1, line: 0), end: FilePos(pos: 6, col: 6, line: 0), kind: .variable("hello")), 
             operands: [
-                .init(start: 7, end: 8, kind: .variable("a")),
-                .init(start: 9, end: 10, kind: .variable("b")),
-                .init(start: 11, end: 12, kind: .variable("c")),
+                .init(start: FilePos(pos: 7, col: 7, line: 0), end: FilePos(pos: 8, col: 8, line: 0), kind: .variable("a")),
+                .init(start: FilePos(pos: 9, col: 9, line: 0), end: FilePos(pos: 10, col: 10, line: 0), kind: .variable("b")),
+                .init(start: FilePos(pos: 11, col: 11, line: 0), end: FilePos(pos: 12, col: 12, line: 0), kind: .variable("c")),
             ]))
     }
 
@@ -67,9 +67,9 @@ struct ParserTests {
         var parser = Parser(lexer: Lexer(data: data))
         let expr = try parser.parseExpression()
         #expect(expr.kind == .conditional(
-            test: .init(start: 4, end: 8, kind: .variable("test")), 
-            consequence: .init(start: 9, end: 13, kind: .variable("then")), 
-            alternate: .init(start: 14, end: 18, kind: .variable("else"))))
+            test: .init(start: FilePos(pos: 4, col: 4, line: 0), end: FilePos(pos: 8, col: 8, line: 0), kind: .variable("test")), 
+            consequence: .init(start: FilePos(pos: 9, col: 9, line: 0), end: FilePos(pos: 13, col: 13, line: 0), kind: .variable("then")), 
+            alternate: .init(start: FilePos(pos: 14, col: 14, line: 0), end: FilePos(pos: 18, col: 18, line: 0), kind: .variable("else"))))
     }
 
     @Test func testIf02() throws {
@@ -77,8 +77,8 @@ struct ParserTests {
         var parser = Parser(lexer: Lexer(data: data))
         let expr = try parser.parseExpression()
         #expect(expr.kind == .conditional(
-            test: .init(start: 4, end: 8, kind: .variable("test")), 
-            consequence: .init(start: 9, end: 13, kind: .variable("then")), 
+            test: .init(start: FilePos(pos: 4, col: 4, line: 0), end: FilePos(pos: 8, col: 8, line: 0), kind: .variable("test")), 
+            consequence: .init(start: FilePos(pos: 9, col: 9, line: 0), end: FilePos(pos: 13, col: 13, line: 0), kind: .variable("then")), 
             alternate: nil))
     }
 
@@ -89,13 +89,12 @@ struct ParserTests {
         var parser = Parser(lexer: Lexer(data: data))
         let expr = try parser.parseExpression()
         #expect(expr.kind == .procedure(params: ["x"], remainingParams: nil, body: [
-            .init(start: 12, end: 19, kind: 
-            .procedureCall(operator: .init(start: 13, end: 14, kind: .variable("a")), operands: [
-                .init(start: 15, end: 16, kind: .variable("x")),
-                .init(start: 17, end: 18, kind: .number(1)),
+            .init(start: FilePos(pos: 12, col: 12, line: 0), end: FilePos(pos: 19, col: 19, line: 0), kind: 
+            .procedureCall(operator: .init(start: FilePos(pos: 13, col: 13, line: 0), end: FilePos(pos: 14, col: 14, line: 0), kind: .variable("a")), operands: [
+                .init(start: FilePos(pos: 15, col: 15, line: 0), end: FilePos(pos: 16, col: 16, line: 0), kind: .variable("x")),
+                .init(start: FilePos(pos: 17, col: 17, line: 0), end: FilePos(pos: 18, col: 18, line: 0), kind: .number(1)),
             ]))
         ]))
     }
 }
-
 

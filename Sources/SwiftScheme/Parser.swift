@@ -10,7 +10,7 @@ enum ParserErrorKind: Error {
 }
 
 struct ParserError: Error {
-    let pos: Int
+    let pos: FilePos
     let kind: ParserErrorKind
 }
 
@@ -108,7 +108,7 @@ struct Parser {
             return Expr(start: token.start, end: token.end, kind: .variable(name))
         }
 
-        throw ParserError(pos: 0, kind: .unexpectedEOF)
+        throw ParserError(pos: FilePos(pos: 0, col: 0, line: 0), kind: .unexpectedEOF)
     }
 
     mutating func parseAssignment() throws -> Expr {
@@ -211,7 +211,7 @@ struct Parser {
     }
 
     mutating func parseConditional() throws -> Expr {
-        guard let lparenToken = try lexer.next() else { throw ParserError(pos: 0, kind: .unexpectedEOF) }
+        guard let lparenToken = try lexer.next() else { throw ParserError(pos: FilePos(pos: 0, col: 0, line: 0), kind: .unexpectedEOF) }
         guard case .lparen = lparenToken.value else { throw ParserError(pos: lparenToken.start, kind: .unexpectedTokenKind(exp: .lparen, act: lparenToken.value)) }
 
         guard let ifToken = try lexer.next() else { throw ParserError(pos: lparenToken.end, kind: .unexpectedEOF) }
@@ -220,21 +220,21 @@ struct Parser {
         let test = try self.parseExpression()
         let consequence = try self.parseExpression()
         
-        guard let nextToken = try lexer.peek() else { throw ParserError(pos: 0, kind: .unexpectedEOF) }
+        guard let nextToken = try lexer.peek() else { throw ParserError(pos: FilePos(pos: 0, col: 0, line: 0), kind: .unexpectedEOF) }
         var alternate: Expr? = nil
         if nextToken.value != .rparen {
             alternate = try self.parseExpression()
         }
 
-        guard let rparenToken = try lexer.next() else { throw ParserError(pos: 0, kind: .unexpectedEOF) }
-        guard case .rparen = rparenToken.value else { throw ParserError(pos: 0, kind: .unexpectedEOF) }
+        guard let rparenToken = try lexer.next() else { throw ParserError(pos: FilePos(pos: 0, col: 0, line: 0), kind: .unexpectedEOF) }
+        guard case .rparen = rparenToken.value else { throw ParserError(pos: FilePos(pos: 0, col: 0, line: 0), kind: .unexpectedEOF) }
 
         return Expr(start: lparenToken.start, end: rparenToken.end, kind: .conditional(test: test, consequence: consequence, alternate: alternate))
     }
 
     mutating func parseProcedureCall() throws -> Expr {
-        guard let lparenToken = try lexer.next() else { throw ParserError(pos: 0, kind: .unexpectedEOF) }
-        guard case .lparen = lparenToken.value else { throw ParserError(pos: 0, kind: .unexpectedEOF) }
+        guard let lparenToken = try lexer.next() else { throw ParserError(pos: FilePos(pos: 0, col: 0, line: 0), kind: .unexpectedEOF) }
+        guard case .lparen = lparenToken.value else { throw ParserError(pos: FilePos(pos: 0, col: 0, line: 0), kind: .unexpectedEOF) }
 
         let op = try self.parseExpression()
 
@@ -244,8 +244,8 @@ struct Parser {
             operands.append(operand)
         }
 
-        guard let rparenToken = try lexer.next() else { throw ParserError(pos: 0, kind: .unexpectedEOF) }
-        guard case .rparen = rparenToken.value else { throw ParserError(pos: 0, kind: .unexpectedEOF) }
+        guard let rparenToken = try lexer.next() else { throw ParserError(pos: FilePos(pos: 0, col: 0, line: 0), kind: .unexpectedEOF) }
+        guard case .rparen = rparenToken.value else { throw ParserError(pos: FilePos(pos: 0, col: 0, line: 0), kind: .unexpectedEOF) }
         return Expr(start: lparenToken.start, end: rparenToken.end, kind: .procedureCall(operator: op, operands: operands))
     }
 

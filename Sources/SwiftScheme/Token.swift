@@ -13,11 +13,11 @@ enum TokenValue: Equatable {
 }
 
 struct Token: Equatable {
-    let start: Int
-    let end: Int
+    let start: FilePos
+    let end: FilePos
     let value: TokenValue
 
-    init(start: Int, end: Int, value: TokenValue) {
+    init(start: FilePos, end: FilePos, value: TokenValue) {
         self.start = start
         self.end = end
         self.value = value

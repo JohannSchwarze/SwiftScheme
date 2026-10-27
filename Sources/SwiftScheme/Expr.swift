@@ -16,7 +16,7 @@ indirect enum ExprKind: Equatable {
 
 
 struct Expr: Equatable {
-    let start: Int
-    let end: Int
+    let start: FilePos
+    let end: FilePos
     let kind: ExprKind
 }

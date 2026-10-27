@@ -11,8 +11,8 @@ indirect enum DatumKind: Equatable {
 
 
 struct Datum: Equatable {
-    let start: Int
-    let end: Int
+    let start: FilePos
+    let end: FilePos
     let kind: DatumKind
 }
 

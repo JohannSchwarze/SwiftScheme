@@ -54,7 +54,7 @@ struct SchemeRuntime {
                     if var list = try env.value(name: "xs").value {
                         while case .pair(let car, let cdr) = list {
                             guard case .number(let num) = car else {
-                                throw ParserError.init(pos: 0, kind: .unexpectedEOF)
+                                throw ParserError.init(pos: FilePos(pos: 0, col: 0, line: 0), kind: .unexpectedEOF)
                             }
                             sum += num
                             list = cdr
@@ -77,7 +77,7 @@ struct SchemeRuntime {
                         if var list = try env.value(name: "xs").value {
                             while case .pair(let car, let cdr) = list {
                                 guard case .number(let num) = car else {
-                                    throw ParserError.init(pos: 0, kind: .unexpectedEOF)
+                                    throw ParserError.init(pos: FilePos(pos: 0, col: 0, line: 0), kind: .unexpectedEOF)
                                 }
                                 product *= num
                                 list = cdr
@@ -99,14 +99,14 @@ struct SchemeRuntime {
                         guard var list = try env.value(name: "xs").value,
                               case .pair(let first, let rest) = list,
                               case .number(let firstNumber) = first else {
-                            throw ParserError.init(pos: 0, kind: .unexpectedEOF)
+                            throw ParserError.init(pos: FilePos(pos: 0, col: 0, line: 0), kind: .unexpectedEOF)
                         }
                         var result = firstNumber
                         var hasSubsequentOperand = false
                         list = rest
                         while case .pair(let car, let cdr) = list {
                             guard case .number(let num) = car else {
-                                throw ParserError.init(pos: 0, kind: .unexpectedEOF)
+                                throw ParserError.init(pos: FilePos(pos: 0, col: 0, line: 0), kind: .unexpectedEOF)
                             }
                             result -= num
                             hasSubsequentOperand = true
@@ -132,14 +132,14 @@ struct SchemeRuntime {
                               case .pair(let first, let rest) = list,
                               case .number(let previous) = first,
                               case .pair = rest else {
-                            throw ParserError.init(pos: 0, kind: .unexpectedEOF)
+                            throw ParserError.init(pos: FilePos(pos: 0, col: 0, line: 0), kind: .unexpectedEOF)
                         }
 
                         list = rest
                         var previousNumber = previous
                         while case .pair(let car, let cdr) = list {
                             guard case .number(let num) = car else {
-                                throw ParserError.init(pos: 0, kind: .unexpectedEOF)
+                                throw ParserError.init(pos: FilePos(pos: 0, col: 0, line: 0), kind: .unexpectedEOF)
                             }
                             if previousNumber >= num {
                                 return .boolean(value: false)
@@ -161,7 +161,7 @@ struct SchemeRuntime {
                     arity: 1,
                     invoke: { env in
                         guard case .pair(let car, _) = try env.value(name: "pair").value else {
-                            throw ParserError.init(pos: 0, kind: .unexpectedEOF)
+                            throw ParserError.init(pos: FilePos(pos: 0, col: 0, line: 0), kind: .unexpectedEOF)
                         }
                         return car
                     }))))
@@ -177,7 +177,7 @@ struct SchemeRuntime {
                     arity: 1,
                     invoke: { env in
                         guard case .pair(_, let cdr) = try env.value(name: "pair").value else {
-                            throw ParserError.init(pos: 0, kind: .unexpectedEOF)
+                            throw ParserError.init(pos: FilePos(pos: 0, col: 0, line: 0), kind: .unexpectedEOF)
                         }
                         return cdr
                     }))))
@@ -203,7 +203,7 @@ struct SchemeRuntime {
     mutating func loadProgram(program: Program) throws {
         for definition in program.definitions {
             guard case .variable(let name) = definition.variable.kind else {
-                throw ParserError.init(pos: 0, kind: .unexpectedEOF)
+                throw ParserError.init(pos: FilePos(pos: 0, col: 0, line: 0), kind: .unexpectedEOF)
             }
             let location = SchemeEnvironmentLocation<SchemeValue>(value: nil)
             environment.bind(name: name, value: location)
@@ -340,7 +340,7 @@ struct SchemeRuntime {
                 let result = try callable.invoke(procEnv)
                 return result
             } else {
-                throw ParserError.init(pos: 0, kind: .unexpectedEOF)
+                throw ParserError.init(pos: FilePos(pos: 0, col: 0, line: 0), kind: .unexpectedEOF)
             }
 
         case .procedure(let params, let remainingParams, let body):
