@@ -3,6 +3,126 @@
 
 
 
+
+
+struct FilePos {
+    let pos: Int
+    let col: Int
+    let line: Int
+
+    init(pos: Int, col: Int, line: Int) {
+        self.pos = pos
+        self.col = col
+        self.line = line
+    }
+}
+
+
+
+
+
+struct CharacterSource {
+    let data: String
+    private(set) var pos: Int
+    private(set) var endPos: Int
+
+    private(set) var col: Int
+    private(set) var line: Int
+
+    var filePos: FilePos {
+        FilePos(pos: pos, col: col, line: line)
+    }
+
+    private var posStack: [FilePos] 
+
+    init(data: String) {
+        self.data = data
+        self.pos = 0
+        self.endPos = data.count
+
+        self.col = 0
+        self.line = 0
+
+        self.posStack = []
+    }
+
+
+
+
+    private func char(at index: Int) -> Character? {
+        guard 0 <= index, index < endPos else { return nil }
+        return data[data.index(data.startIndex, offsetBy: index)]
+    }
+
+    mutating func pushPosition() {
+        posStack.append(FilePos(pos: pos, col: col, line: line))
+    }
+
+    mutating func popPosition() {
+        let filePos = posStack.removeLast()
+        self.pos = filePos.pos
+        self.col = filePos.col
+        self.line = filePos.line
+    }
+
+    mutating func forgetPosition() {
+        let _ = posStack.removeLast()
+    }
+
+    func peekChar() -> Character? {
+        return char(at: pos)
+    }
+
+    mutating func nextChar() -> Character? {
+        let char = char(at: pos)
+        self.pos += 1
+        self.pos = min(pos, endPos)
+
+        if char == "\n" {
+            line += 1
+            col = 0
+        } else {
+            col += 1
+        }
+
+        return char
+    }
+
+    mutating func skipWhitespace() {
+        var consumedWhitespace: Bool = true
+        while consumedWhitespace {
+            consumedWhitespace = false
+            while let char = peekChar(), char.isWhitespace {
+                let _ = self.nextChar()
+                consumedWhitespace = true
+            }
+            if let char = peekChar(), char == ";" {
+                while let char = peekChar(), !char.isNewline {
+                    let _ = self.nextChar()
+                    consumedWhitespace = true
+                }
+            }
+        }
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 enum LexerErrorKind: Error, Equatable {
     case unrecognizedToken
 }

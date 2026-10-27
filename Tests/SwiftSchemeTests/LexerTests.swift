@@ -2,6 +2,42 @@ import Testing
 @testable import SwiftScheme
 
 struct LexerTests {
+    @Test func testCharacterSource01() throws {
+        let data = "he"
+        var source = CharacterSource(data: data)
+        #expect(source.peekChar() == "h")
+        #expect(source.nextChar() == "h")
+        #expect(source.nextChar() == "e")
+        #expect(source.nextChar() == nil)
+        #expect(source.peekChar() == nil)
+    }
+
+    @Test func testCharacterSource02() throws {
+        let data = "he\n\nllo"
+        var source = CharacterSource(data: data)
+        #expect(source.pos == 0)
+        #expect(source.line == 0)
+        #expect(source.col == 0)
+        #expect(source.nextChar() == "h")
+
+        #expect(source.pos == 1)
+        #expect(source.line == 0)
+        #expect(source.col == 1)
+        #expect(source.nextChar() == "e")
+
+        source.skipWhitespace()
+        #expect(source.peekChar() == "l")
+        #expect(source.line == 2)
+        #expect(source.col == 0)
+    }
+
+    @Test func testCharacterSource03() throws {
+        let data = "\n\n;test\nh"
+        var source = CharacterSource(data: data)
+        source.skipWhitespace()
+        #expect(source.line == 3)
+    }
+
     @Test func testBoolean01() throws {
         let data = "#t"
         var lexer = Lexer(data: data)
