@@ -90,6 +90,33 @@ struct SchemeRuntimeTests {
         )
     }
 
+    @Test func testRuntimeErrors() throws {
+        var runtime = SchemeRuntime(environment: SchemeEnvironment())
+        try runtime.loadNativeProcedures()
+
+        do {
+            _ = try runtime.evaluate("(+ 1 #t)", env: runtime.environment)
+            Issue.record("Expected a runtime error for a non-number argument")
+        } catch SchemeRuntimeError.expectedNumber(let procedure) {
+            #expect(procedure == "+")
+        }
+
+        do {
+            _ = try runtime.evaluate("(car 1)", env: runtime.environment)
+            Issue.record("Expected a runtime error for a non-pair argument")
+        } catch SchemeRuntimeError.expectedPair(let procedure) {
+            #expect(procedure == "car")
+        }
+
+        do {
+            _ = try runtime.evaluate("(car 1 2)", env: runtime.environment)
+            Issue.record("Expected a runtime error for an incorrect argument count")
+        } catch SchemeRuntimeError.incorrectArgumentCount(let procedure, _, let actual) {
+            #expect(procedure == "car")
+            #expect(actual == 2)
+        }
+    }
+
 
 
     @Test func testProgram01() throws {

@@ -1,7 +1,14 @@
 
 
-enum SchemeEnvironmentError: Error {
+public enum SchemeEnvironmentError: Error {
     case unboundVariable(name: String)
+
+    public var localizedDescription: String {
+        switch self {
+        case .unboundVariable(let name):
+            "Unbound variable with name \(name)"
+        }
+    }
 }
 
 

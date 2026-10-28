@@ -2,6 +2,38 @@
 
 
 
+import Foundation
+
+
+public enum SchemeRuntimeError: LocalizedError {
+    case expectedNumber(procedure: String)
+    case expectedPair(procedure: String)
+    case expectedProcedure
+    case incorrectArgumentCount(procedure: String, expected: String, actual: Int)
+    case uninitializedVariable(name: String)
+    case invalidDefinition
+    case emptyProcedureBody
+
+    public var errorDescription: String? {
+        switch self {
+        case .expectedNumber(let procedure):
+            "Expected a number in procedure \(procedure)"
+        case .expectedPair(let procedure):
+            "Expected a pair in procedure \(procedure)"
+        case .expectedProcedure:
+            "Expected a procedure"
+        case .incorrectArgumentCount(let procedure, let expected, let actual):
+            "Procedure \(procedure) expected \(expected) arguments, received \(actual)"
+        case .uninitializedVariable(let name):
+            "Variable \(name) was used before it was initialized"
+        case .invalidDefinition:
+            "Definition must define a variable"
+        case .emptyProcedureBody:
+            "Procedure body must not be empty"
+        }
+    }
+}
+
 struct SchemeRuntime {
     var environment: SchemeEnvironment<SchemeEnvironmentLocation<SchemeValue>>
 
@@ -54,7 +86,7 @@ struct SchemeRuntime {
                     if var list = try env.value(name: "xs").value {
                         while case .pair(let car, let cdr) = list {
                             guard case .number(let num) = car else {
-                                throw ParserError.init(pos: FilePos(pos: 0, col: 0, line: 0), kind: .unexpectedEOF)
+                                throw SchemeRuntimeError.expectedNumber(procedure: "+")
                             }
                             sum += num
                             list = cdr
@@ -77,7 +109,7 @@ struct SchemeRuntime {
                         if var list = try env.value(name: "xs").value {
                             while case .pair(let car, let cdr) = list {
                                 guard case .number(let num) = car else {
-                                    throw ParserError.init(pos: FilePos(pos: 0, col: 0, line: 0), kind: .unexpectedEOF)
+                                    throw SchemeRuntimeError.expectedNumber(procedure: "*")
                                 }
                                 product *= num
                                 list = cdr
@@ -97,16 +129,22 @@ struct SchemeRuntime {
                     arity: nil,
                     invoke: { env in
                         guard var list = try env.value(name: "xs").value,
-                              case .pair(let first, let rest) = list,
-                              case .number(let firstNumber) = first else {
-                            throw ParserError.init(pos: FilePos(pos: 0, col: 0, line: 0), kind: .unexpectedEOF)
+                              case .pair(let first, let rest) = list else {
+                            throw SchemeRuntimeError.incorrectArgumentCount(
+                                procedure: "-",
+                                expected: "at least 1",
+                                actual: 0
+                            )
+                        }
+                        guard case .number(let firstNumber) = first else {
+                            throw SchemeRuntimeError.expectedNumber(procedure: "-")
                         }
                         var result = firstNumber
                         var hasSubsequentOperand = false
                         list = rest
                         while case .pair(let car, let cdr) = list {
                             guard case .number(let num) = car else {
-                                throw ParserError.init(pos: FilePos(pos: 0, col: 0, line: 0), kind: .unexpectedEOF)
+                                throw SchemeRuntimeError.expectedNumber(procedure: "-")
                             }
                             result -= num
                             hasSubsequentOperand = true
@@ -129,17 +167,29 @@ struct SchemeRuntime {
                     arity: nil,
                     invoke: { env in
                         guard var list = try env.value(name: "xs").value,
-                              case .pair(let first, let rest) = list,
-                              case .number(let previous) = first,
-                              case .pair = rest else {
-                            throw ParserError.init(pos: FilePos(pos: 0, col: 0, line: 0), kind: .unexpectedEOF)
+                              case .pair(let first, let rest) = list else {
+                            throw SchemeRuntimeError.incorrectArgumentCount(
+                                procedure: "<",
+                                expected: "at least 2",
+                                actual: 0
+                            )
+                        }
+                        guard case .pair = rest else {
+                            throw SchemeRuntimeError.incorrectArgumentCount(
+                                procedure: "<",
+                                expected: "at least 2",
+                                actual: 1
+                            )
+                        }
+                        guard case .number(let previous) = first else {
+                            throw SchemeRuntimeError.expectedNumber(procedure: "<")
                         }
 
                         list = rest
                         var previousNumber = previous
                         while case .pair(let car, let cdr) = list {
                             guard case .number(let num) = car else {
-                                throw ParserError.init(pos: FilePos(pos: 0, col: 0, line: 0), kind: .unexpectedEOF)
+                                throw SchemeRuntimeError.expectedNumber(procedure: "<")
                             }
                             if previousNumber >= num {
                                 return .boolean(value: false)
@@ -161,7 +211,7 @@ struct SchemeRuntime {
                     arity: 1,
                     invoke: { env in
                         guard case .pair(let car, _) = try env.value(name: "pair").value else {
-                            throw ParserError.init(pos: FilePos(pos: 0, col: 0, line: 0), kind: .unexpectedEOF)
+                            throw SchemeRuntimeError.expectedPair(procedure: "car")
                         }
                         return car
                     }))))
@@ -177,7 +227,7 @@ struct SchemeRuntime {
                     arity: 1,
                     invoke: { env in
                         guard case .pair(_, let cdr) = try env.value(name: "pair").value else {
-                            throw ParserError.init(pos: FilePos(pos: 0, col: 0, line: 0), kind: .unexpectedEOF)
+                            throw SchemeRuntimeError.expectedPair(procedure: "cdr")
                         }
                         return cdr
                     }))))
@@ -203,7 +253,7 @@ struct SchemeRuntime {
     mutating func loadProgram(program: Program) throws {
         for definition in program.definitions {
             guard case .variable(let name) = definition.variable.kind else {
-                throw ParserError.init(pos: FilePos(pos: 0, col: 0, line: 0), kind: .unexpectedEOF)
+                throw SchemeRuntimeError.invalidDefinition
             }
             let location = SchemeEnvironmentLocation<SchemeValue>(value: nil)
             environment.bind(name: name, value: location)
@@ -266,7 +316,9 @@ struct SchemeRuntime {
         
         case .variable(let name):
             let location = try env.value(name: name)
-            guard let value = location.value else { throw SchemeEnvironmentError.unboundVariable(name: name) }
+            guard let value = location.value else {
+                throw SchemeRuntimeError.uninitializedVariable(name: name)
+            }
             return value
         
         case .quotation(let datum):
@@ -276,6 +328,20 @@ struct SchemeRuntime {
             let proc = try evaluate(expr: op, env: env)
 
             if case .procedure(var procEnv, let params, let remainingParams, let body) = proc {
+                if remainingParams == nil, operands.count != params.count {
+                    throw SchemeRuntimeError.incorrectArgumentCount(
+                        procedure: "procedure",
+                        expected: "\(params.count)",
+                        actual: operands.count
+                    )
+                }
+                if remainingParams != nil, operands.count < params.count {
+                    throw SchemeRuntimeError.incorrectArgumentCount(
+                        procedure: "procedure",
+                        expected: "at least \(params.count)",
+                        actual: operands.count
+                    )
+                }
                 procEnv.pushRegion()
                 defer {
                     procEnv.popRegion()
@@ -306,9 +372,24 @@ struct SchemeRuntime {
                 for expr in body {
                     last = try evaluate(expr: expr, env: procEnv)
                 }
-                return last!
+                guard let last else { throw SchemeRuntimeError.emptyProcedureBody }
+                return last
 
             } else if case .nativeProcedure(var procEnv, let params, let remainingParams, let callable) = proc {
+                if let arity = callable.arity, operands.count != arity {
+                    throw SchemeRuntimeError.incorrectArgumentCount(
+                        procedure: callable.name,
+                        expected: "\(arity)",
+                        actual: operands.count
+                    )
+                }
+                if remainingParams != nil, operands.count < params.count {
+                    throw SchemeRuntimeError.incorrectArgumentCount(
+                        procedure: callable.name,
+                        expected: "at least \(params.count)",
+                        actual: operands.count
+                    )
+                }
                 procEnv.pushRegion()
                 defer {
                     procEnv.popRegion()
@@ -340,7 +421,7 @@ struct SchemeRuntime {
                 let result = try callable.invoke(procEnv)
                 return result
             } else {
-                throw ParserError.init(pos: FilePos(pos: 0, col: 0, line: 0), kind: .unexpectedEOF)
+                throw SchemeRuntimeError.expectedProcedure
             }
 
         case .procedure(let params, let remainingParams, let body):

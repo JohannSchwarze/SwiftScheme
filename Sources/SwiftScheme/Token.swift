@@ -10,6 +10,31 @@ enum TokenValue: Equatable {
     case lparenHash
     case quoteAbbr
     case period
+
+    var localizedDescription: String {
+        return switch self {
+        case .boolean(let value):
+            "BOOLEAN \(value)"
+        case .identifier(let name):
+            "IDENTIFIER \(name)"
+        case .character(let value):
+            "CHARACTER \(value)"
+        case .number(let value):
+            "NUMBER \(value)"
+        case .string(let value):
+            "STRING \(value)"
+        case .lparen:
+            "LPAREN"
+        case .rparen:
+            "RPAREN"
+        case .lparenHash:
+            "LPARENHASH"
+        case .period:
+            "PERIOD"
+        case .quoteAbbr:
+            "QUOTEABBR"
+        }
+    }
 }
 
 struct Token: Equatable {

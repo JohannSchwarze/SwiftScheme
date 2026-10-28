@@ -15,6 +15,10 @@ struct FilePos: Equatable {
         self.col = col
         self.line = line
     }
+
+    var localizedDescription: String {
+        "Line: \(line), Col: \(col)"
+    }
 }
 
 
@@ -134,9 +138,18 @@ enum LexerErrorKind: Error, Equatable {
     case unrecognizedToken
 }
 
-struct LexerError: Error, Equatable {
+public struct LexerError: Error, Equatable {
     let pos: FilePos
     let kind: LexerErrorKind
+
+    var localizedDescription: String {
+        let t1 = pos.localizedDescription
+        let t2 = switch kind {
+            case .unrecognizedToken:
+                "Unrecognized token"
+        }
+        return "\(t1) - \(t2)"
+    }
 }
 
 

@@ -19,7 +19,13 @@ struct SwiftSchemeCLI {
                 guard let line = readLine() else { break }
                 print(try interpreter.evaluate(source: line))
             }
-        } catch {
+        } catch (let error as ParserError) {
+            print(error.localizedDescription)
+        } catch (let error as LexerError) {
+            print(error.localizedDescription)
+        } catch (let error as SchemeEnvironmentError) {
+            print(error.localizedDescription)
+        } catch let error {
             print(error.localizedDescription)
         }
     }
