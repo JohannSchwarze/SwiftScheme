@@ -4,8 +4,43 @@ protocol SchemeLib {
 
 struct SchemeStdlib: SchemeLib {
     var lib: [NativeProcedure] {
-        [plus, multiply, subtract, lessThan, car, cdr, null]
+        [plus, multiply, subtract, lessThan, car, cdr, null, not, boolean_pred]
     }
+
+
+
+
+
+
+
+    private let not = NativeProcedure(
+        name: "not", params: ["x"], remainingParams: nil, invoke: { env in
+            guard let x = try env.value(name: "x").value else {
+                throw SchemeRuntimeError.incorrectArgumentCount(procedure: "not", expected: "1", actual: 0)
+            }
+            if case .boolean(false) = x {
+                return .boolean(value: true)
+            } else {
+                return .boolean(value: false)
+            }
+        })
+
+    private let boolean_pred = NativeProcedure(
+        name: "boolean?", params: ["x"], remainingParams: nil, invoke: { env in
+            guard let x = try env.value(name: "x").value else {
+                throw SchemeRuntimeError.incorrectArgumentCount(procedure: "boolean?", expected: "1", actual: 0)
+            }
+            if case .boolean(let value) = x {
+                return .boolean(value: true)
+            } else {
+                return .boolean(value: false)
+            }
+        })
+
+
+
+
+
 
     private let plus = NativeProcedure(
         name: "+",
