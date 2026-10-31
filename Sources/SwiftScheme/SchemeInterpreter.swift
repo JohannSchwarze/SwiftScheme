@@ -5,7 +5,7 @@ public struct SchemeInterpreter {
         var runtime = SchemeRuntime(
             environment: SchemeEnvironment<SchemeEnvironmentLocation<SchemeValue>>()
         )
-        try runtime.loadNativeProcedures()
+        try runtime.loadLibrary(SchemeStdlib())
         self.runtime = runtime
     }
 

@@ -73,7 +73,7 @@ struct SchemeRuntimeTests {
 
     @Test func testNativeProcedures01() throws {
         var runtime = SchemeRuntime(environment: SchemeEnvironment())
-        try runtime.loadNativeProcedures()
+        try runtime.loadLibrary(SchemeStdlib())
         let value = try runtime.evaluate("(+ 3 7)", env: runtime.environment)
         let exp: SchemeValue = .number(value: 10)
         #expect(exp == value)
@@ -81,7 +81,7 @@ struct SchemeRuntimeTests {
 
     @Test func testNativePairSelectors() throws {
         var runtime = SchemeRuntime(environment: SchemeEnvironment())
-        try runtime.loadNativeProcedures()
+        try runtime.loadLibrary(SchemeStdlib())
 
         #expect(try runtime.evaluate("(car '(1 2))", env: runtime.environment) == .number(value: 1))
         #expect(
@@ -92,7 +92,7 @@ struct SchemeRuntimeTests {
 
     @Test func testRuntimeErrors() throws {
         var runtime = SchemeRuntime(environment: SchemeEnvironment())
-        try runtime.loadNativeProcedures()
+        try runtime.loadLibrary(SchemeStdlib())
 
         do {
             _ = try runtime.evaluate("(+ 1 #t)", env: runtime.environment)
@@ -121,7 +121,7 @@ struct SchemeRuntimeTests {
 
     @Test func testProgram01() throws {
         var runtime = SchemeRuntime(environment: SchemeEnvironment())
-        try runtime.loadNativeProcedures()
+        try runtime.loadLibrary(SchemeStdlib())
 
         let data = """
         (define fact
@@ -140,7 +140,7 @@ struct SchemeRuntimeTests {
 
     @Test func testProgram02() throws {
         var runtime = SchemeRuntime(environment: SchemeEnvironment())
-        try runtime.loadNativeProcedures()
+        try runtime.loadLibrary(SchemeStdlib())
 
         let data = """
         (define fib
@@ -163,7 +163,7 @@ struct SchemeRuntimeTests {
 
     @Test func testProgram03() throws {
         var runtime = SchemeRuntime(environment: SchemeEnvironment())
-        try runtime.loadNativeProcedures()
+        try runtime.loadLibrary(SchemeStdlib())
 
         let data = """
         (define gen-counter
@@ -186,7 +186,7 @@ struct SchemeRuntimeTests {
 
     @Test func testProgram04() throws {
         var runtime = SchemeRuntime(environment: SchemeEnvironment())
-        try runtime.loadNativeProcedures()
+        try runtime.loadLibrary(SchemeStdlib())
 
         let data = """
         (define my-length

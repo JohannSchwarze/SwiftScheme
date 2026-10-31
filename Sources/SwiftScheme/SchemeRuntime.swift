@@ -55,7 +55,7 @@ struct SchemeRuntime {
             return "(cons \(print(value: car)) \(print(value: cdr)))"
         case .procedure(_, _, _, _):
             return "#procedure"
-        case .nativeProcedure(_, _, _, _):
+        case .nativeProcedure(_, _):
             return "#nativeProcedure"
         }
     }
@@ -70,183 +70,15 @@ struct SchemeRuntime {
 
 
 
-    mutating func loadNativeProcedures() throws {
-        environment.bind(
-            name: "+", 
-            value: SchemeEnvironmentLocation(value: .nativeProcedure(
-                env: SchemeEnvironment<SchemeEnvironmentLocation<SchemeValue>>(), 
-                params: [],
-                remainingParams: "xs", 
-                callable: NativeProcedure(
-                    name: "+", 
-                    arity: nil,
-                    invoke: { env in
-
-                    var sum: Int = 0
-                    if var list = try env.value(name: "xs").value {
-                        while case .pair(let car, let cdr) = list {
-                            guard case .number(let num) = car else {
-                                throw SchemeRuntimeError.expectedNumber(procedure: "+")
-                            }
-                            sum += num
-                            list = cdr
-                        }
-                    }
-                    return .number(value: sum)
-        }))))
-
-        environment.bind(
-            name: "*",
-            value: SchemeEnvironmentLocation(value: .nativeProcedure(
-                env: SchemeEnvironment<SchemeEnvironmentLocation<SchemeValue>>(),
-                params: [],
-                remainingParams: "xs",
-                callable: NativeProcedure(
-                    name: "*",
-                    arity: nil,
-                    invoke: { env in
-                        var product = 1
-                        if var list = try env.value(name: "xs").value {
-                            while case .pair(let car, let cdr) = list {
-                                guard case .number(let num) = car else {
-                                    throw SchemeRuntimeError.expectedNumber(procedure: "*")
-                                }
-                                product *= num
-                                list = cdr
-                            }
-                        }
-                        return .number(value: product)
-                    }))))
-
-        environment.bind(
-            name: "-",
-            value: SchemeEnvironmentLocation(value: .nativeProcedure(
-                env: SchemeEnvironment<SchemeEnvironmentLocation<SchemeValue>>(),
-                params: [],
-                remainingParams: "xs",
-                callable: NativeProcedure(
-                    name: "-",
-                    arity: nil,
-                    invoke: { env in
-                        guard var list = try env.value(name: "xs").value,
-                              case .pair(let first, let rest) = list else {
-                            throw SchemeRuntimeError.incorrectArgumentCount(
-                                procedure: "-",
-                                expected: "at least 1",
-                                actual: 0
-                            )
-                        }
-                        guard case .number(let firstNumber) = first else {
-                            throw SchemeRuntimeError.expectedNumber(procedure: "-")
-                        }
-                        var result = firstNumber
-                        var hasSubsequentOperand = false
-                        list = rest
-                        while case .pair(let car, let cdr) = list {
-                            guard case .number(let num) = car else {
-                                throw SchemeRuntimeError.expectedNumber(procedure: "-")
-                            }
-                            result -= num
-                            hasSubsequentOperand = true
-                            list = cdr
-                        }
-                        if !hasSubsequentOperand {
-                            result = -result
-                        }
-                        return .number(value: result)
-                    }))))
-
-        environment.bind(
-            name: "<",
-            value: SchemeEnvironmentLocation(value: .nativeProcedure(
-                env: SchemeEnvironment<SchemeEnvironmentLocation<SchemeValue>>(),
-                params: [],
-                remainingParams: "xs",
-                callable: NativeProcedure(
-                    name: "<",
-                    arity: nil,
-                    invoke: { env in
-                        guard var list = try env.value(name: "xs").value,
-                              case .pair(let first, let rest) = list else {
-                            throw SchemeRuntimeError.incorrectArgumentCount(
-                                procedure: "<",
-                                expected: "at least 2",
-                                actual: 0
-                            )
-                        }
-                        guard case .pair = rest else {
-                            throw SchemeRuntimeError.incorrectArgumentCount(
-                                procedure: "<",
-                                expected: "at least 2",
-                                actual: 1
-                            )
-                        }
-                        guard case .number(let previous) = first else {
-                            throw SchemeRuntimeError.expectedNumber(procedure: "<")
-                        }
-
-                        list = rest
-                        var previousNumber = previous
-                        while case .pair(let car, let cdr) = list {
-                            guard case .number(let num) = car else {
-                                throw SchemeRuntimeError.expectedNumber(procedure: "<")
-                            }
-                            if previousNumber >= num {
-                                return .boolean(value: false)
-                            }
-                            previousNumber = num
-                            list = cdr
-                        }
-                        return .boolean(value: true)
-                    }))))
-
-        environment.bind(
-            name: "car",
-            value: SchemeEnvironmentLocation(value: .nativeProcedure(
-                env: SchemeEnvironment<SchemeEnvironmentLocation<SchemeValue>>(),
-                params: ["pair"],
-                remainingParams: nil,
-                callable: NativeProcedure(
-                    name: "car",
-                    arity: 1,
-                    invoke: { env in
-                        guard case .pair(let car, _) = try env.value(name: "pair").value else {
-                            throw SchemeRuntimeError.expectedPair(procedure: "car")
-                        }
-                        return car
-                    }))))
-
-        environment.bind(
-            name: "cdr",
-            value: SchemeEnvironmentLocation(value: .nativeProcedure(
-                env: SchemeEnvironment<SchemeEnvironmentLocation<SchemeValue>>(),
-                params: ["pair"],
-                remainingParams: nil,
-                callable: NativeProcedure(
-                    name: "cdr",
-                    arity: 1,
-                    invoke: { env in
-                        guard case .pair(_, let cdr) = try env.value(name: "pair").value else {
-                            throw SchemeRuntimeError.expectedPair(procedure: "cdr")
-                        }
-                        return cdr
-                    }))))
-
-        environment.bind(
-            name: "null?",
-            value: SchemeEnvironmentLocation(value: .nativeProcedure(
-                env: SchemeEnvironment<SchemeEnvironmentLocation<SchemeValue>>(),
-                params: ["value"],
-                remainingParams: nil,
-                callable: NativeProcedure(
-                    name: "null?",
-                    arity: 1,
-                    invoke: { env in
-                        if case .emptyList = try env.value(name: "value").value {
-                            return .boolean(value: true)
-                        }
-                        return .boolean(value: false)
-                    }))))
+    mutating func loadLibrary(_ lib: SchemeLib) throws {
+        for value in lib.lib {
+            environment.bind(
+                name: value.name,
+                value: SchemeEnvironmentLocation(
+                    value: .nativeProcedure(env: environment, callable: value)
+                )
+            )
+        }
     }
 
 
@@ -375,11 +207,13 @@ struct SchemeRuntime {
                 guard let last else { throw SchemeRuntimeError.emptyProcedureBody }
                 return last
 
-            } else if case .nativeProcedure(var procEnv, let params, let remainingParams, let callable) = proc {
-                if let arity = callable.arity, operands.count != arity {
+            } else if case .nativeProcedure(var procEnv, let callable) = proc {
+                let params = callable.params
+                let remainingParams = callable.remainingParams
+                if remainingParams == nil, operands.count != params.count {
                     throw SchemeRuntimeError.incorrectArgumentCount(
                         procedure: callable.name,
-                        expected: "\(arity)",
+                        expected: "\(params.count)",
                         actual: operands.count
                     )
                 }
@@ -394,13 +228,11 @@ struct SchemeRuntime {
                 defer {
                     procEnv.popRegion()
                 }
-                var operandValues: [SchemeValue] = []
                 for (operand, param) in zip(operands, params) {
                     let location = SchemeEnvironmentLocation<SchemeValue>(value: nil)
                     procEnv.bind(name: param, value: location)
                     let operandValue = try evaluate(expr: operand, env: env)
                     location.value = operandValue
-                    operandValues.append(operandValue)
                 }
 
                 let remainingOperandsCount = max(0, operands.count - params.count)

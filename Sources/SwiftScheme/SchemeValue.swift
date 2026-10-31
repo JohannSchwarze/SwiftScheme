@@ -8,16 +8,19 @@
 
 final class NativeProcedure: Equatable {
     let name: String
-    let arity: Int? // nil means variadic
+    let params: [String]
+    let remainingParams: String?
     let invoke: (SchemeEnvironment<SchemeEnvironmentLocation<SchemeValue>>) throws -> SchemeValue
 
     init(
         name: String,
-        arity: Int? = nil,
+        params: [String],
+        remainingParams: String?,
         invoke: @escaping (SchemeEnvironment<SchemeEnvironmentLocation<SchemeValue>>) throws -> SchemeValue
     ) {
         self.name = name
-        self.arity = arity
+        self.params = params
+        self.remainingParams = remainingParams
         self.invoke = invoke
     }
 
@@ -36,7 +39,7 @@ indirect enum SchemeValue: Equatable {
     case emptyList
     case pair(car: SchemeValue, cdr: SchemeValue)
     case procedure(env: SchemeEnvironment<SchemeEnvironmentLocation<SchemeValue>>, params: [String], remainingParams: String?, body: [Expr])
-    case nativeProcedure(env: SchemeEnvironment<SchemeEnvironmentLocation<SchemeValue>>, params: [String], remainingParams: String?, callable: NativeProcedure)
+    case nativeProcedure(env: SchemeEnvironment<SchemeEnvironmentLocation<SchemeValue>>, callable: NativeProcedure)
 }
 
 
